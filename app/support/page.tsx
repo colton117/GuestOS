@@ -3,36 +3,45 @@ import { PublicPageShell } from "@/components/public-page-shell";
 
 export const metadata: Metadata = {
   title: "Support | GuestOS",
-  description: "GuestOS support and operational contact information.",
+  description:
+    "GuestOS support contact information for portal access and operational questions.",
 };
 
 export default function SupportPage() {
   return (
     <PublicPageShell
-      title="Support"
-      description="Use these support channels for GuestOS portal access and operational questions."
+      title="GuestOS Support"
+      description="Contact GuestOS for portal access, visit coordination, and operational support."
     >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-            General Support
+            Email
           </p>
-          <p className="mt-2 font-medium text-slate-950">
-            support@guestos.local
-          </p>
-          <p className="mt-1">Mon-Fri, 9:00 AM - 5:00 PM</p>
+          <a
+            href="mailto:support@minterav.com"
+            className="mt-2 block font-medium text-slate-950 underline"
+          >
+            support@minterav.com
+          </a>
         </div>
         <div className="rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-            Urgent Access Issues
+            Phone
           </p>
-          <p className="mt-2 font-medium text-slate-950">+1 (555) 010-2000</p>
-          <p className="mt-1">For active visit and access coordination only.</p>
+          <a
+            href="tel:+19038093025"
+            className="mt-2 block font-medium text-slate-950 underline"
+          >
+            903-809-3025
+          </a>
         </div>
       </div>
+
       <p>
-        This support page is intended for the GuestOS foundation and operational
-        use. It does not replace property-specific emergency procedures.
+        For urgent property access issues, contact the host directly. GuestOS
+        support assists with portal access and operational questions but does not
+        replace on-site host coordination during an active visit.
       </p>
     </PublicPageShell>
   );

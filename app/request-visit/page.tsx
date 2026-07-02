@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
+import { SmsConsentCheckbox } from "@/components/sms-consent-checkbox";
 import { getGuestVehicles, requireCurrentGuest } from "@/lib/portal";
 import { requestVisitAction } from "@/lib/portal-actions";
 
@@ -94,6 +95,9 @@ export default async function RequestVisitPage() {
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
                 />
               </label>
+              <div className="md:col-span-2">
+                <SmsConsentCheckbox />
+              </div>
               <div className="md:col-span-2">
                 <button className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white">
                   Submit Request
