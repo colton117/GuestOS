@@ -2,6 +2,63 @@ import { PrismaClient, VisitStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const initialDoors = [
+  {
+    friendlyName: "2nd Floor Vehicle Gate",
+    homeAssistantAction: "door.second_floor_vehicle_gate",
+    enabled: true,
+    doorType: "BUTTERFLY",
+  },
+  {
+    friendlyName: "Retail Garage Lobby / Elevator",
+    homeAssistantAction: "door.retail_garage_lobby_elevator",
+    enabled: true,
+    doorType: "SMARTRENT",
+  },
+  {
+    friendlyName: "Package Locker Lobby Door",
+    homeAssistantAction: "door.package_locker_lobby_door",
+    enabled: true,
+    doorType: "MANUAL_CODE",
+  },
+  {
+    friendlyName: "Knight St Pedestrian Gate",
+    homeAssistantAction: "door.knight_st_pedestrian_gate",
+    enabled: true,
+    doorType: "BUTTERFLY",
+  },
+  {
+    friendlyName: "Loading Dock",
+    homeAssistantAction: "door.loading_dock",
+    enabled: true,
+    doorType: "SMARTRENT",
+  },
+  {
+    friendlyName: "Garage Pedestrian Gate",
+    homeAssistantAction: "door.garage_pedestrian_gate",
+    enabled: true,
+    doorType: "BUTTERFLY",
+  },
+  {
+    friendlyName: "Pool",
+    homeAssistantAction: "door.pool",
+    enabled: true,
+    doorType: "MANUAL_CODE",
+  },
+  {
+    friendlyName: "Apartment Door 4160",
+    homeAssistantAction: "door.apartment_door_4160",
+    enabled: true,
+    doorType: "SMARTRENT",
+  },
+  {
+    friendlyName: "Stairwell",
+    homeAssistantAction: "door.stairwell",
+    enabled: true,
+    doorType: "MANUAL_CODE",
+  },
+];
+
 function addHours(date, hours) {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
 }
@@ -10,6 +67,35 @@ async function main() {
   await prisma.visit.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.guest.deleteMany();
+
+  await Promise.all([
+    prisma.parkingSettings.upsert({
+      where: { id: 1 },
+      create: { id: 1 },
+      update: {},
+    }),
+    prisma.homeAssistantSettings.upsert({
+      where: { id: 1 },
+      create: { id: 1 },
+      update: {},
+    }),
+    prisma.notificationSettings.upsert({
+      where: { id: 1 },
+      create: { id: 1 },
+      update: {},
+    }),
+    prisma.brandingSettings.upsert({
+      where: { id: 1 },
+      create: { id: 1 },
+      update: {},
+    }),
+  ]);
+
+  if ((await prisma.door.count()) === 0) {
+    await prisma.door.createMany({
+      data: initialDoors,
+    });
+  }
 
   const now = new Date();
 

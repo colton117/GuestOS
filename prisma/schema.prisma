@@ -19,6 +19,57 @@ model Guest {
   visits    Visit[]
 }
 
+model Host {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ParkingSettings {
+  id                        Int      @id @default(1)
+  currentQuarterlyPromoCode String?
+  parkingEnabled            Boolean  @default(true)
+  maximumParkingDuration    Int      @default(24)
+  updatedAt                 DateTime @updatedAt
+}
+
+model HomeAssistantSettings {
+  id             Int      @id @default(1)
+  haUrl          String?
+  haToken        String?
+  webhookTimeout Int      @default(10)
+  updatedAt      DateTime @updatedAt
+}
+
+model NotificationSettings {
+  id                      Int      @id @default(1)
+  hostEmail               String?
+  appleNotificationEnabled Boolean  @default(false)
+  guestEmailEnabled       Boolean  @default(false)
+  updatedAt               DateTime @updatedAt
+}
+
+model BrandingSettings {
+  id            Int      @id @default(1)
+  logoData      Bytes?
+  logoMimeType  String?
+  welcomeMessage String?
+  updatedAt     DateTime @updatedAt
+}
+
+model Door {
+  id                    String    @id @default(cuid())
+  friendlyName          String
+  homeAssistantAction   String
+  enabled               Boolean   @default(true)
+  doorType              DoorType
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
 model Vehicle {
   id        String @id @default(cuid())
   guestId   String
@@ -62,4 +113,10 @@ enum VisitStatus {
   DENIED
   ACTIVE
   COMPLETED
+}
+
+enum DoorType {
+  BUTTERFLY
+  SMARTRENT
+  MANUAL_CODE
 }
