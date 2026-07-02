@@ -12,35 +12,40 @@ model Guest {
   firstName String
   lastName  String
   email     String    @unique
-  phone     String?
+  phone     String    @unique
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   vehicles  Vehicle[]
   visits    Visit[]
 }
 
 model Vehicle {
-  id      String @id @default(cuid())
-  guestId String
-  make    String
-  model   String
-  year    Int
-  plate   String
-  state   String
-  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  id        String @id @default(cuid())
+  guestId   String
+  make      String
+  model     String
+  year      Int
+  color     String
+  plate     String
+  state     String
+  isDefault Boolean @default(false)
+  guest     Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([guestId])
 }
 
 model Visit {
-  id                     String      @id @default(cuid())
-  guestId                String
-  arrival                DateTime
-  departure              DateTime?
-  parkingRequired        Boolean     @default(false)
-  buildingAccessRequired Boolean     @default(false)
-  status                 VisitStatus @default(PENDING)
-  createdAt              DateTime    @default(now())
-  guest                  Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  id                       String      @id @default(cuid())
+  guestId                  String
+  arrivalDateTime          DateTime
+  departureDateTime        DateTime?
+  parkingRequired          Boolean     @default(true)
+  buildingAccessRequired   Boolean     @default(true)
+  apartmentAccessRequired  Boolean     @default(true)
+  status                   VisitStatus @default(PENDING)
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  guest                    Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([guestId])
   @@index([status])
@@ -48,7 +53,8 @@ model Visit {
 
 enum VisitStatus {
   PENDING
+  APPROVED
+  DENIED
   ACTIVE
   COMPLETED
-  CANCELLED
 }
