@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import { AdminShell } from "@/components/admin-shell";
 
 export const metadata: Metadata = {
   title: "GuestOS",
-  description: "Resident guest management dashboard.",
+  description: "Guest and resident portal for GuestOS.",
 };
 
 export default function RootLayout({
@@ -14,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <AdminShell>{children}</AdminShell>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

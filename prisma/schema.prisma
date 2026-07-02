@@ -30,6 +30,7 @@ model Vehicle {
   state     String
   isDefault Boolean @default(false)
   guest     Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  visits    Visit[]
 
   @@index([guestId])
 }
@@ -37,17 +38,21 @@ model Vehicle {
 model Visit {
   id                       String      @id @default(cuid())
   guestId                  String
+  vehicleId                String?
   arrivalDateTime          DateTime
   departureDateTime        DateTime?
   parkingRequired          Boolean     @default(true)
   buildingAccessRequired   Boolean     @default(true)
   apartmentAccessRequired  Boolean     @default(true)
+  requestNotes             String?
   status                   VisitStatus @default(PENDING)
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
   guest                    Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  vehicle                  Vehicle?    @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
 
   @@index([guestId])
+  @@index([vehicleId])
   @@index([status])
 }
 

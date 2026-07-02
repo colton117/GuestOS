@@ -1,5 +1,5 @@
 import { GuestLogin } from "@/components/guest-login";
 
-export default function HomePage() {
+export default function LoginPage() {
   return <GuestLogin />;
 }

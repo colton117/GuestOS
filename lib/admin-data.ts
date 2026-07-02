@@ -82,6 +82,7 @@ export async function getPendingRequests() {
           vehicles: true,
         },
       },
+      vehicle: true,
     },
   });
 }
