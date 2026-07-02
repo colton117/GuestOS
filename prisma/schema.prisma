@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Guest {
+  id        String    @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String    @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  vehicles  Vehicle[]
+  visits    Visit[]
+}
+
+model Vehicle {
+  id      String @id @default(cuid())
+  guestId String
+  make    String
+  model   String
+  year    Int
+  plate   String
+  state   String
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
+}
+
+model Visit {
+  id                     String      @id @default(cuid())
+  guestId                String
+  arrival                DateTime
+  departure              DateTime?
+  parkingRequired        Boolean     @default(false)
+  buildingAccessRequired Boolean     @default(false)
+  status                 VisitStatus @default(PENDING)
+  createdAt              DateTime    @default(now())
+  guest                  Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
+  @@index([status])
+}
+
+enum VisitStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}

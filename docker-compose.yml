@@ -1,0 +1,12 @@
+services:
+  guestos:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:./dev.db"
+    volumes:
+      - guestos-data:/app/prisma
+
+volumes:
+  guestos-data:
