@@ -5,18 +5,25 @@ export const SMS_CONSENT_LABEL =
 
 export function SmsConsentCheckbox({ name = "smsConsent" }: { name?: string }) {
   return (
-    <label className="flex items-start gap-3 rounded-lg border border-slate-200 px-4 py-3">
+    <label className="gos-panel flex items-start gap-3 px-4 py-4">
       <input
         type="checkbox"
         name={name}
         required
-        className="mt-1 shrink-0"
+        className="mt-1 h-4 w-4 shrink-0 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
       />
-      <span className="text-sm leading-6 text-slate-700">
-        {SMS_CONSENT_LABEL}{" "}
-        <Link href="/sms-terms" className="font-medium text-slate-950 underline">
-          SMS Terms
-        </Link>
+      <span className="space-y-1 text-sm leading-6 text-[color:var(--gos-text)]">
+        <span>{SMS_CONSENT_LABEL}</span>
+        <span className="block">
+          Review the full{" "}
+          <Link
+            href="/sms-terms"
+            className="font-medium text-[color:var(--gos-primary)] underline decoration-[rgba(31,46,39,0.3)] decoration-2 underline-offset-4"
+          >
+            SMS Terms
+          </Link>
+          .
+        </span>
       </span>
     </label>
   );

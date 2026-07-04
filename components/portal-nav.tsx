@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Building2,
+  CarFront,
+  Clock3,
+  LogOut,
+  UserRound,
+} from "lucide-react";
 import { clearGuestAction } from "@/lib/portal-actions";
 
 const links = [
-  { href: "/current-visit", label: "Current Visit" },
-  { href: "/vehicles", label: "Vehicles" },
-  { href: "/profile", label: "Profile" },
-  { href: "/visits", label: "History" },
+  { href: "/current-visit", label: "Current Visit", icon: Building2 },
+  { href: "/vehicles", label: "Vehicles", icon: CarFront },
+  { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/visits", label: "History", icon: Clock3 },
 ];
 
 export function PortalNav({ guestName }: { guestName?: string }) {
@@ -19,35 +26,36 @@ export function PortalNav({ guestName }: { guestName?: string }) {
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.7)] backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <p className="gos-section-title text-[0.72rem] font-semibold">
               GuestOS
             </p>
-            <h1 className="mt-1 text-lg font-semibold text-slate-950">
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
               Guest Portal
             </h1>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {guestName ? (
-              <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600">
+              <div className="rounded-full border border-[rgba(31,46,39,0.1)] bg-white px-4 py-2 text-sm text-[color:var(--gos-muted)] shadow-sm">
                 {guestName}
               </div>
             ) : null}
             <Link
               href="/login"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-300 hover:text-slate-950"
+              className="gos-button-ghost text-sm"
             >
               Switch Guest
             </Link>
             <form action={clearGuestAction}>
               <button
                 type="submit"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-300 hover:text-slate-950"
+                className="gos-button-ghost text-sm"
               >
+                <LogOut className="h-4 w-4" />
                 Logout
               </button>
             </form>
@@ -63,12 +71,13 @@ export function PortalNav({ guestName }: { guestName?: string }) {
               key={link.href}
               href={link.href}
               aria-current={isActive(link.href) ? "page" : undefined}
-              className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              className={`gos-button-secondary shrink-0 text-sm ${
                 isActive(link.href)
-                  ? "border-slate-950 bg-slate-950 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950"
+                  ? "border-[color:var(--gos-primary)] bg-[color:var(--gos-primary)] text-white shadow-md"
+                  : ""
               }`}
             >
+              <link.icon className="h-4 w-4" />
               {link.label}
             </Link>
           ))}

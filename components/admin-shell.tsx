@@ -3,21 +3,21 @@ import { AdminNav } from "@/components/admin-nav";
 
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="gos-shell">
+      <header className="border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.72)] backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <p className="gos-section-title text-[0.72rem] font-semibold">
               GuestOS
             </p>
-            <h1 className="mt-1 text-lg font-semibold text-slate-950">
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
               Resident Dashboard
             </h1>
           </div>
           <AdminNav />
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         {children}
       </main>
     </div>

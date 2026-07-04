@@ -10,9 +10,9 @@ export function PortalShell({
   guestName?: string;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="gos-shell">
       <PortalNav guestName={guestName} />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         {children}
       </main>
       <PublicFooter />

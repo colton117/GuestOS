@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CarFront, CheckCircle2, PlusCircle, PencilLine, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import {
@@ -27,68 +29,88 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
-      <div className="space-y-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-              Vehicles
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-              Saved vehicles
-            </h1>
+      <div className="space-y-6 lg:space-y-8">
+        <section className="gos-card overflow-hidden">
+          <div className="flex flex-col gap-6 px-6 py-8 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-3">
+              <p className="gos-badge">Vehicles</p>
+              <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
+                Premium vehicle list
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
+                Keep your arrivals simple with clearly marked primary and secondary vehicles.
+              </p>
+            </div>
+            <Link href="/request-visit" className="gos-button-primary">
+              <PlusCircle className="h-4 w-4" />
+              Request Visit
+            </Link>
           </div>
-        </div>
+        </section>
 
         <SectionCard title="Vehicle List">
           <div className="space-y-4">
             {vehicles.length === 0 ? (
-              <p className="text-sm text-slate-600">No saved vehicles.</p>
+              <div className="gos-panel p-6 text-sm text-[color:var(--gos-muted)]">
+                No saved vehicles.
+              </div>
             ) : (
               vehicles.map((vehicle) => (
-                <div
+                <article
                   key={vehicle.id}
-                  className="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between"
+                  className="gos-panel flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between"
                 >
-                  <div className="text-sm text-slate-700">
-                    <p className="font-medium text-slate-950">
-                      {vehicle.year} {vehicle.make} {vehicle.model}
-                    </p>
-                    <p>
-                      {vehicle.color} • {vehicle.plate} • {vehicle.state}
-                    </p>
-                    {vehicle.isDefault ? (
-                      <p className="mt-1 text-xs font-medium text-slate-500">
-                        Default Vehicle
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
+                      <CarFront className="h-6 w-6 text-[color:var(--gos-primary)]" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-[color:var(--gos-primary)]">
+                        {vehicle.year} {vehicle.make} {vehicle.model}
                       </p>
-                    ) : null}
+                      <p className="mt-1 text-sm text-[color:var(--gos-muted)]">
+                        {vehicle.color} • {vehicle.plate} • {vehicle.state}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {vehicle.isDefault ? (
+                          <span className="gos-badge bg-[rgba(62,107,78,0.12)] text-[color:var(--gos-success)]">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Primary vehicle
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/vehicles?edit=${vehicle.id}`}
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      className="gos-button-secondary text-xs"
                     >
+                      <PencilLine className="h-4 w-4" />
                       Edit
                     </Link>
                     <form action={setDefaultVehicleAction}>
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
-                      <button className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700">
-                        Set Default Vehicle
+                      <button className="gos-button-secondary text-xs">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Set Default
                       </button>
                     </form>
                     <form action={deleteVehicleAction}>
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
-                      <button className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700">
+                      <button className="gos-button-secondary text-xs">
+                        <Trash2 className="h-4 w-4" />
                         Delete
                       </button>
                     </form>
                   </div>
-                </div>
+                </article>
               ))
             )}
           </div>
         </SectionCard>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
           <SectionCard title={editingVehicle ? "Edit Vehicle" : "Add Vehicle"}>
             <form
               action={editingVehicle ? updateVehicleAction : addVehicleAction}
@@ -97,78 +119,56 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
               {editingVehicle ? (
                 <input type="hidden" name="vehicleId" value={editingVehicle.id} />
               ) : null}
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Make</span>
-                <input
-                  name="make"
-                  defaultValue={editingVehicle?.make ?? ""}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Model</span>
-                <input
-                  name="model"
-                  defaultValue={editingVehicle?.model ?? ""}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Year</span>
+              <Field label="Make">
+                <input name="make" defaultValue={editingVehicle?.make ?? ""} className="gos-input" />
+              </Field>
+              <Field label="Model">
+                <input name="model" defaultValue={editingVehicle?.model ?? ""} className="gos-input" />
+              </Field>
+              <Field label="Year">
                 <input
                   name="year"
                   type="number"
                   defaultValue={editingVehicle?.year ?? 2024}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                  className="gos-input"
                 />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Color</span>
-                <input
-                  name="color"
-                  defaultValue={editingVehicle?.color ?? ""}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Plate</span>
-                <input
-                  name="plate"
-                  defaultValue={editingVehicle?.plate ?? ""}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">State</span>
-                <input
-                  name="state"
-                  defaultValue={editingVehicle?.state ?? ""}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
-                />
-              </label>
-              <label className="flex items-center gap-3 md:col-span-2">
+              </Field>
+              <Field label="Color">
+                <input name="color" defaultValue={editingVehicle?.color ?? ""} className="gos-input" />
+              </Field>
+              <Field label="Plate">
+                <input name="plate" defaultValue={editingVehicle?.plate ?? ""} className="gos-input" />
+              </Field>
+              <Field label="State">
+                <input name="state" defaultValue={editingVehicle?.state ?? ""} className="gos-input" />
+              </Field>
+              <label className="md:col-span-2 flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4">
                 <input
                   type="checkbox"
                   name="isDefault"
                   defaultChecked={editingVehicle?.isDefault ?? false}
+                  className="h-4 w-4 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
                 />
-                <span className="text-sm text-slate-700">Set as default</span>
+                <span className="text-sm text-[color:var(--gos-text)]">
+                  Set as primary vehicle
+                </span>
               </label>
-              <div className="md:col-span-2">
-                <button className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white">
+              <div className="md:col-span-2 flex justify-end">
+                <button className="gos-button-primary w-full sm:w-auto">
                   {editingVehicle ? "Save Vehicle" : "Add Vehicle"}
                 </button>
               </div>
             </form>
           </SectionCard>
 
-          <SectionCard title="Request Visit Ready">
-            <div className="space-y-3 text-sm text-slate-600">
-              <p>The default vehicle is used for new visit requests.</p>
-              <Link
-                href="/request-visit"
-                className="inline-flex rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white"
-              >
+          <SectionCard title="Visit Ready">
+            <div className="space-y-4">
+              <div className="gos-panel p-5">
+                <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
+                  The primary vehicle is used when new visit requests are created.
+                </p>
+              </div>
+              <Link href="/request-visit" className="gos-button-primary w-full">
                 Request Visit
               </Link>
             </div>
@@ -176,5 +176,20 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
         </div>
       </div>
     </PortalShell>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-medium text-[color:var(--gos-primary)]">{label}</span>
+      {children}
+    </label>
   );
 }

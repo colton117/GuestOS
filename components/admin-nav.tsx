@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ClipboardList, PenSquare, Settings2, Users } from "lucide-react";
 
 const links = [
-  { href: "/guests", label: "Guests" },
-  { href: "/requests", label: "Requests" },
-  { href: "/quick-register", label: "Quick Register" },
-  { href: "/settings", label: "Settings" },
+  { href: "/guests", label: "Guests", icon: Users },
+  { href: "/requests", label: "Requests", icon: ClipboardList },
+  { href: "/quick-register", label: "Quick Register", icon: PenSquare },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function AdminNav() {
@@ -23,12 +24,13 @@ export function AdminNav() {
             key={link.href}
             href={link.href}
             className={[
-              "rounded-lg border px-3 py-2 text-sm font-medium transition",
+              "gos-button-secondary text-sm",
               active
-                ? "border-slate-950 bg-slate-950 text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950",
+                ? "border-[color:var(--gos-primary)] bg-[color:var(--gos-primary)] text-white shadow-md"
+                : "",
             ].join(" ")}
           >
+            <link.icon className="h-4 w-4" />
             {link.label}
           </Link>
         );

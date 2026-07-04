@@ -11,20 +11,22 @@ export function PublicPageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-              GuestOS
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+    <div className="gos-shell">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <section className="gos-card overflow-hidden">
+          <div className="px-6 py-6 sm:px-8 sm:py-8">
+            <div className="space-y-3">
+              <p className="gos-badge">GuestOS</p>
+              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
               {title}
             </h1>
-            <p className="max-w-2xl text-sm text-slate-600">{description}</p>
+              <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
+                {description}
+              </p>
+            </div>
           </div>
 
-          <div className="mt-6 space-y-6 text-sm leading-6 text-slate-700">
+          <div className="space-y-6 border-t border-[rgba(31,46,39,0.08)] px-6 py-6 text-sm leading-6 text-[color:var(--gos-text)] sm:px-8">
             {children}
           </div>
         </section>

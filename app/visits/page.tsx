@@ -1,3 +1,4 @@
+import { Clock3, MapPin, ShieldCheck } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { getGuestVisits, requireCurrentGuest } from "@/lib/portal";
@@ -8,178 +9,129 @@ function formatDate(value: Date) {
   return value.toLocaleString();
 }
 
+function statusTone(status: string) {
+  switch (status) {
+    case "APPROVED":
+    case "ACTIVE":
+      return "bg-[rgba(62,107,78,0.12)] text-[color:var(--gos-success)]";
+    case "PENDING":
+      return "bg-[rgba(184,138,46,0.14)] text-[color:var(--gos-warning)]";
+    case "DENIED":
+      return "bg-[rgba(166,70,70,0.12)] text-[color:var(--gos-error)]";
+    default:
+      return "bg-[rgba(31,46,39,0.08)] text-[color:var(--gos-primary)]";
+  }
+}
+
 export default async function VisitsPage() {
   const guest = await requireCurrentGuest();
   const visits = await getGuestVisits(guest.id);
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-            History
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Visit history
-          </h1>
-        </div>
+      <div className="space-y-6 lg:space-y-8">
+        <section className="gos-card overflow-hidden">
+          <div className="px-6 py-8 sm:px-8 sm:py-10">
+            <p className="gos-badge">History</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
+              Elegant visit timeline
+            </h1>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
+              Review upcoming stays, active visits, and past arrivals in one calm timeline.
+            </p>
+          </div>
+        </section>
 
         <SectionCard title="Current">
-          <div className="space-y-3">
-            {visits.current.length === 0 ? (
-              <p className="text-sm text-slate-600">No current visits.</p>
-            ) : (
-              visits.current.map((visit) => (
-                <div
-                  key={visit.id}
-                  className="rounded-lg border border-slate-200 p-4 text-sm text-slate-700"
-                >
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <p>
-                      <span className="font-medium text-slate-950">Arrival:</span>{" "}
-                      {formatDate(visit.arrivalDateTime)}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Departure:
-                      </span>{" "}
-                      {visit.departureDateTime
-                        ? formatDate(visit.departureDateTime)
-                        : "—"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Parking Status:
-                      </span>{" "}
-                      {visit.parkingRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Building Access:
-                      </span>{" "}
-                      {visit.buildingAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Apartment Access:
-                      </span>{" "}
-                      {visit.apartmentAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">Status:</span>{" "}
-                      {visit.status}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Timeline visits={visits.current} emptyText="No current visits." />
         </SectionCard>
 
         <SectionCard title="Upcoming">
-          <div className="space-y-3">
-            {visits.upcoming.length === 0 ? (
-              <p className="text-sm text-slate-600">No upcoming visits.</p>
-            ) : (
-              visits.upcoming.map((visit) => (
-                <div
-                  key={visit.id}
-                  className="rounded-lg border border-slate-200 p-4 text-sm text-slate-700"
-                >
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <p>
-                      <span className="font-medium text-slate-950">Arrival:</span>{" "}
-                      {formatDate(visit.arrivalDateTime)}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Departure:
-                      </span>{" "}
-                      {visit.departureDateTime
-                        ? formatDate(visit.departureDateTime)
-                        : "—"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Parking Status:
-                      </span>{" "}
-                      {visit.parkingRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Building Access:
-                      </span>{" "}
-                      {visit.buildingAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Apartment Access:
-                      </span>{" "}
-                      {visit.apartmentAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">Status:</span>{" "}
-                      {visit.status}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Timeline visits={visits.upcoming} emptyText="No upcoming visits." />
         </SectionCard>
 
         <SectionCard title="Past">
-          <div className="space-y-3">
-            {visits.past.length === 0 ? (
-              <p className="text-sm text-slate-600">No past visits.</p>
-            ) : (
-              visits.past.map((visit) => (
-                <div
-                  key={visit.id}
-                  className="rounded-lg border border-slate-200 p-4 text-sm text-slate-700"
-                >
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <p>
-                      <span className="font-medium text-slate-950">Arrival:</span>{" "}
-                      {formatDate(visit.arrivalDateTime)}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Departure:
-                      </span>{" "}
-                      {visit.departureDateTime
-                        ? formatDate(visit.departureDateTime)
-                        : "—"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Parking Status:
-                      </span>{" "}
-                      {visit.parkingRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Building Access:
-                      </span>{" "}
-                      {visit.buildingAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">
-                        Apartment Access:
-                      </span>{" "}
-                      {visit.apartmentAccessRequired ? "Required" : "Not required"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-950">Status:</span>{" "}
-                      {visit.status}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Timeline visits={visits.past} emptyText="No past visits." />
         </SectionCard>
       </div>
     </PortalShell>
+  );
+}
+
+function Timeline({
+  visits,
+  emptyText,
+}: {
+  visits: Array<{
+    id: string;
+    arrivalDateTime: Date;
+    departureDateTime: Date | null;
+    parkingRequired: boolean;
+    buildingAccessRequired: boolean;
+    apartmentAccessRequired: boolean;
+    status: string;
+  }>;
+  emptyText: string;
+}) {
+  if (visits.length === 0) {
+    return <p className="text-sm text-[color:var(--gos-muted)]">{emptyText}</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {visits.map((visit) => (
+        <article key={visit.id} className="gos-panel p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className={`gos-badge ${statusTone(visit.status)}`}>
+                  {visit.status}
+                </span>
+                <span className="text-sm text-[color:var(--gos-muted)]">
+                  {formatDate(visit.arrivalDateTime)}
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Stat icon={Clock3} label="Arrival" value={formatDate(visit.arrivalDateTime)} />
+                <Stat icon={MapPin} label="Departure" value={visit.departureDateTime ? formatDate(visit.departureDateTime) : "—"} />
+                <Stat
+                  icon={ShieldCheck}
+                  label="Access"
+                  value={[
+                    visit.parkingRequired ? "Parking" : null,
+                    visit.buildingAccessRequired ? "Building" : null,
+                    visit.apartmentAccessRequired ? "Apartment" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "None"}
+                />
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Clock3;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[24px] bg-[rgba(31,46,39,0.04)] p-4">
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-[color:var(--gos-accent)]" />
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+          {label}
+        </p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-[color:var(--gos-text)]">{value}</p>
+    </div>
   );
 }
