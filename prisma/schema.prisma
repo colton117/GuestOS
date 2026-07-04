@@ -3,20 +3,37 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Guest {
-  id        String    @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String    @unique
-  phone     String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  vehicles  Vehicle[]
-  visits    Visit[]
+  id          String            @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String            @unique
+  phone       String            @unique
+  smsOptIn    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  vehicles    Vehicle[]
+  visits      Visit[]
+  credentials GuestCredential[]
+}
+
+model GuestCredential {
+  id           String    @id @default(cuid())
+  guestId      String
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      Int       @default(0)
+  transports   String?
+  deviceLabel  String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  guest        Guest     @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
 }
 
 model Host {
@@ -32,7 +49,7 @@ model ParkingSettings {
   id                        Int      @id @default(1)
   currentQuarterlyPromoCode String?
   parkingEnabled            Boolean  @default(true)
-  maximumParkingDuration    Int      @default(24)
+  maximumParkingDuration    Int      @default(7)
   updatedAt                 DateTime @updatedAt
 }
 
