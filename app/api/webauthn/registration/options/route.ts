@@ -48,6 +48,11 @@ export async function POST() {
     authenticatorSelection: {
       residentKey: "preferred",
       userVerification: "preferred",
+      // Guests are registering Face ID/Touch ID/Windows Hello, not a
+      // physical security key — restricting to "platform" here skips the
+      // QR-code/security-key choice screen and goes straight to the
+      // on-device biometric prompt.
+      authenticatorAttachment: "platform",
     },
   });
 
