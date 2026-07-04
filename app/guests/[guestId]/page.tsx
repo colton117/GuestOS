@@ -1,16 +1,28 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, PlusCircle } from "lucide-react";
 import { AdminShell } from "@/components/admin-shell";
 import { SectionCard } from "@/components/section-card";
+import { Modal } from "@/components/ui/modal";
+import { VehicleFormFields } from "@/components/vehicle-form-fields";
 import { getGuestById } from "@/lib/admin-data";
-import { adminUpdateGuestAction } from "@/lib/admin-guest-actions";
+import {
+  adminAddVehicleAction,
+  adminUpdateGuestAction,
+  adminUpdateVehicleAction,
+} from "@/lib/admin-guest-actions";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 type GuestDetailPageProps = {
   params: Promise<{ guestId: string }>;
-  searchParams?: Promise<{ edit?: string; error?: string }>;
+  searchParams?: Promise<{
+    edit?: string;
+    error?: string;
+    addVehicle?: string;
+    vehicleEdit?: string;
+  }>;
 };
 
 export default async function GuestDetailPage({
@@ -20,7 +32,7 @@ export default async function GuestDetailPage({
   await requireAdminSession("/guests");
 
   const { guestId } = await params;
-  const { edit, error } = (await searchParams) ?? {};
+  const { edit, error, addVehicle, vehicleEdit } = (await searchParams) ?? {};
   const guest = await getGuestById(guestId);
 
   if (!guest) {
@@ -28,15 +40,28 @@ export default async function GuestDetailPage({
   }
 
   const isEditing = edit === "1";
+  const editingVehicle = vehicleEdit
+    ? guest.vehicles.find((vehicle) => vehicle.id === vehicleEdit)
+    : null;
 
   return (
     <AdminShell>
       <div className="space-y-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="gos-section-title text-[0.72rem] font-semibold">
-              Guests
-            </p>
+            <nav className="flex items-center gap-2 text-sm text-[color:var(--gos-muted)]">
+              <Link
+                href="/guests"
+                className="inline-flex items-center gap-1 hover:text-[color:var(--gos-primary)]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Guests
+              </Link>
+              <span aria-hidden="true">/</span>
+              <span className="font-medium text-[color:var(--gos-primary)]">
+                {guest.firstName} {guest.lastName}
+              </span>
+            </nav>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
               {guest.firstName} {guest.lastName}
             </h1>
@@ -146,28 +171,47 @@ export default async function GuestDetailPage({
         )}
 
         <SectionCard title="Vehicles">
-          {guest.vehicles.length === 0 ? (
-            <p className="text-sm text-[color:var(--gos-muted)]">
-              No vehicles on file.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {guest.vehicles.map((vehicle) => (
-                <li
-                  key={vehicle.id}
-                  className="gos-panel flex items-center justify-between p-4 text-sm"
-                >
-                  <span>
-                    {vehicle.year} {vehicle.make} {vehicle.model} &middot;{" "}
-                    {vehicle.plate} ({vehicle.state})
-                  </span>
-                  {vehicle.isDefault ? (
-                    <span className="gos-badge">Default</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <Link
+                href={`/guests/${guest.id}?addVehicle=1`}
+                className="gos-button-secondary text-xs"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add Vehicle
+              </Link>
+            </div>
+            {guest.vehicles.length === 0 ? (
+              <p className="text-sm text-[color:var(--gos-muted)]">
+                No vehicles on file.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {guest.vehicles.map((vehicle) => (
+                  <li
+                    key={vehicle.id}
+                    className="gos-panel flex items-center justify-between gap-3 p-4 text-sm"
+                  >
+                    <span>
+                      {vehicle.year} {vehicle.make} {vehicle.model} &middot;{" "}
+                      {vehicle.plate} ({vehicle.state})
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {vehicle.isDefault ? (
+                        <span className="gos-badge">Default</span>
+                      ) : null}
+                      <Link
+                        href={`/guests/${guest.id}?vehicleEdit=${vehicle.id}`}
+                        className="gos-button-secondary text-xs"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </SectionCard>
 
         <SectionCard title="Visit History">
@@ -190,6 +234,41 @@ export default async function GuestDetailPage({
           )}
         </SectionCard>
       </div>
+
+      <Modal
+        open={Boolean(addVehicle)}
+        closeHref={`/guests/${guest.id}`}
+        title="Add Vehicle"
+      >
+        <form action={adminAddVehicleAction} className="grid gap-4 md:grid-cols-2">
+          <input type="hidden" name="guestId" value={guest.id} />
+          <VehicleFormFields />
+          <div className="md:col-span-2 flex justify-end">
+            <button type="submit" className="gos-button-primary text-sm">
+              Add Vehicle
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(editingVehicle)}
+        closeHref={`/guests/${guest.id}`}
+        title="Edit Vehicle"
+      >
+        {editingVehicle ? (
+          <form action={adminUpdateVehicleAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="guestId" value={guest.id} />
+            <input type="hidden" name="vehicleId" value={editingVehicle.id} />
+            <VehicleFormFields defaultValues={editingVehicle} />
+            <div className="md:col-span-2 flex justify-end">
+              <button type="submit" className="gos-button-primary text-sm">
+                Save Vehicle
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </AdminShell>
   );
 }

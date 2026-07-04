@@ -2,8 +2,11 @@ import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { AdminNav } from "@/components/admin-nav";
 import { adminLogoutAction } from "@/lib/admin-auth-actions";
+import { getPendingRequestCount } from "@/lib/admin-data";
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export async function AdminShell({ children }: { children: ReactNode }) {
+  const pendingRequestCount = await getPendingRequestCount();
+
   return (
     <div className="gos-shell">
       <header className="border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.72)] backdrop-blur">
@@ -17,7 +20,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <AdminNav />
+            <AdminNav pendingRequestCount={pendingRequestCount} />
             <form action={adminLogoutAction}>
               <button type="submit" className="gos-button-ghost text-sm">
                 <LogOut className="h-4 w-4" />

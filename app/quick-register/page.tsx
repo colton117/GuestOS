@@ -2,11 +2,15 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { findQuickRegisterMatch } from "@/lib/admin-data";
 import { SectionCard } from "@/components/section-card";
+import { AutoSearchInput } from "@/components/auto-search-input";
+import { Modal } from "@/components/ui/modal";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { adminUpdateGuestAction } from "@/lib/admin-guest-actions";
 import {
   adminCreateGuestAction,
   adminCreateVisitAction,
 } from "@/lib/admin-visit-actions";
+import { roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +18,7 @@ type QuickRegisterPageProps = {
   searchParams?: Promise<{
     q?: string;
     error?: string;
+    editGuest?: string;
   }>;
 };
 
@@ -22,10 +27,12 @@ export default async function QuickRegisterPage({
 }: QuickRegisterPageProps) {
   await requireAdminSession("/quick-register");
 
-  const { q: query = "", error } = (await searchParams) ?? {};
+  const { q: query = "", error, editGuest } = (await searchParams) ?? {};
   const guest = await findQuickRegisterMatch(query);
   const defaultVehicle =
     guest?.vehicles.find((vehicle) => vehicle.isDefault) ?? guest?.vehicles[0];
+  const defaultArrival = toDateTimeLocalValue(roundDownToNearestHalfHour(new Date()));
+  const closeHref = `/quick-register?q=${encodeURIComponent(query)}`;
 
   return (
     <AdminShell>
@@ -51,11 +58,10 @@ export default async function QuickRegisterPage({
               <label className="mb-2 block text-sm font-medium text-[color:var(--gos-primary)]">
                 Search by name, email, phone, or license plate
               </label>
-              <input
+              <AutoSearchInput
                 name="q"
                 defaultValue={query}
                 placeholder="Type a guest or vehicle identifier"
-                className="gos-input text-sm"
               />
             </div>
             <div className="flex items-end">
@@ -96,6 +102,12 @@ export default async function QuickRegisterPage({
                       : "No vehicle on file"}
                   </p>
                 </div>
+                <Link
+                  href={`/quick-register?q=${encodeURIComponent(query)}&editGuest=1`}
+                  className="gos-button-secondary text-xs"
+                >
+                  Edit Guest Details
+                </Link>
               </div>
             </SectionCard>
 
@@ -113,6 +125,7 @@ export default async function QuickRegisterPage({
                     <input
                       name="arrivalDateTime"
                       type="datetime-local"
+                      defaultValue={defaultArrival}
                       required
                       className="gos-input text-sm"
                     />
@@ -237,6 +250,77 @@ export default async function QuickRegisterPage({
           </SectionCard>
         ) : null}
       </div>
+
+      {guest ? (
+        <Modal
+          open={Boolean(editGuest)}
+          closeHref={closeHref}
+          title="Edit Guest Details"
+        >
+          <form action={adminUpdateGuestAction} className="grid gap-4 sm:grid-cols-2">
+            <input type="hidden" name="guestId" value={guest.id} />
+            <input type="hidden" name="successRedirect" value={closeHref} />
+            <input
+              type="hidden"
+              name="errorRedirect"
+              value={`${closeHref}&editGuest=1&error=${encodeURIComponent(
+                "Please check the name, email, and phone number and try again.",
+              )}`}
+            />
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                First Name
+              </span>
+              <input
+                name="firstName"
+                defaultValue={guest.firstName}
+                required
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Last Name
+              </span>
+              <input
+                name="lastName"
+                defaultValue={guest.lastName}
+                required
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Email
+              </span>
+              <input
+                name="email"
+                type="email"
+                defaultValue={guest.email}
+                required
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Phone
+              </span>
+              <input
+                name="phone"
+                type="tel"
+                defaultValue={guest.phone}
+                required
+                className="gos-input text-sm"
+              />
+            </label>
+            <div className="sm:col-span-2 flex justify-end">
+              <button type="submit" className="gos-button-primary text-sm">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
     </AdminShell>
   );
 }

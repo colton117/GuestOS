@@ -84,19 +84,35 @@ export async function saveParkingAction(formData: FormData) {
         formData.get("currentQuarterlyPromoCode"),
       ),
       parkingEnabled: parseBoolean(formData.get("parkingEnabled")),
-      maximumParkingDuration:
-        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
     },
     update: {
       currentQuarterlyPromoCode: parseOptionalString(
         formData.get("currentQuarterlyPromoCode"),
       ),
       parkingEnabled: parseBoolean(formData.get("parkingEnabled")),
+    },
+  });
+
+  revalidatePath("/settings");
+}
+
+export async function saveMaxParkingDurationAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
+  await prisma.parkingSettings.upsert({
+    where: { id: 1 },
+    create: {
+      id: 1,
+      maximumParkingDuration:
+        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
+    },
+    update: {
       maximumParkingDuration:
         parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
     },
   });
 
+  revalidatePath("/admin/property");
   revalidatePath("/settings");
 }
 

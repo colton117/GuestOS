@@ -1,20 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarRange, DoorOpen, MapPinned, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
-import { SectionCard } from "@/components/section-card";
-import { SmsConsentCheckbox } from "@/components/sms-consent-checkbox";
+import { Modal } from "@/components/ui/modal";
+import { RequestVisitForm } from "@/components/request-visit-form";
 import {
   getGuestVehicles,
   getGuestVisitState,
   requireCurrentGuest,
 } from "@/lib/portal";
 import { requestVisitAction } from "@/lib/portal-actions";
+import { roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function RequestVisitPage() {
+export default async function RequestVisitPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ new?: string }>;
+}) {
   const guest = await requireCurrentGuest();
   const visitState = await getGuestVisitState(guest.id);
 
@@ -22,9 +26,11 @@ export default async function RequestVisitPage() {
     redirect("/current-visit");
   }
 
+  const { new: showForm } = (await searchParams) ?? {};
   const vehicles = await getGuestVehicles(guest.id);
   const defaultVehicle =
     vehicles.find((vehicle) => vehicle.isDefault) ?? vehicles[0];
+  const defaultArrival = toDateTimeLocalValue(roundDownToNearestHalfHour(new Date()));
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
@@ -40,6 +46,17 @@ export default async function RequestVisitPage() {
                 <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)] sm:text-lg">
                   Let your host know when you&apos;re arriving.
                 </p>
+              </div>
+
+              <div className="mt-6">
+                {vehicles.length === 0 ? (
+                  <EmptyVehiclePrompt />
+                ) : (
+                  <Link href="/request-visit?new=1" className="gos-button-primary w-fit">
+                    <CalendarRange className="h-4 w-4" />
+                    Request New Visit
+                  </Link>
+                )}
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -63,112 +80,23 @@ export default async function RequestVisitPage() {
             </div>
           </div>
         </section>
-
-        <SectionCard title="Visit Request">
-          {vehicles.length === 0 ? (
-            <EmptyVehiclePrompt />
-          ) : (
-            <form action={requestVisitAction} className="grid gap-5 md:grid-cols-2">
-              <Field label="Arrival Date & Time">
-                <input
-                  name="arrivalDateTime"
-                  type="datetime-local"
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="Departure Date & Time">
-                <input
-                  name="departureDateTime"
-                  type="datetime-local"
-                  className="gos-input"
-                />
-              </Field>
-
-              <label className="space-y-2 md:col-span-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Vehicle
-                </span>
-                <select
-                  name="vehicleId"
-                  defaultValue={defaultVehicle?.id ?? ""}
-                  className="gos-input"
-                >
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.isDefault ? "Primary - " : ""}
-                      {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.plate}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="grid gap-3 md:col-span-2 md:grid-cols-3">
-                <ToggleCard name="parkingRequired" label="Parking Required" />
-                <ToggleCard name="buildingAccessRequired" label="Building Access Required" />
-                <ToggleCard name="apartmentAccessRequired" label="Apartment Access Required" />
-              </div>
-
-              <label className="space-y-2 md:col-span-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Request Notes
-                </span>
-                <textarea name="requestNotes" rows={5} className="gos-input" />
-              </label>
-
-              <div className="md:col-span-2">
-                <SmsConsentCheckbox />
-              </div>
-
-              <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <Link href="/vehicles" className="gos-button-secondary">
-                  Manage Vehicles
-                </Link>
-                <button className="gos-button-primary">
-                  Submit Request
-                </button>
-              </div>
-            </form>
-          )}
-        </SectionCard>
       </div>
+
+      {vehicles.length > 0 ? (
+        <Modal
+          open={Boolean(showForm)}
+          closeHref="/request-visit"
+          title="Request a New Visit"
+        >
+          <RequestVisitForm
+            action={requestVisitAction}
+            vehicles={vehicles}
+            defaultVehicleId={defaultVehicle?.id ?? ""}
+            defaultArrival={defaultArrival}
+          />
+        </Modal>
+      ) : null}
     </PortalShell>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="space-y-2">
-      <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function ToggleCard({
-  name,
-  label,
-}: {
-  name: string;
-  label: string;
-}) {
-  return (
-    <label className="flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4 transition-transform duration-[180ms] hover:-translate-y-0.5">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked
-        className="h-4 w-4 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
-      />
-      <span className="text-sm text-[color:var(--gos-text)]">{label}</span>
-    </label>
   );
 }
 

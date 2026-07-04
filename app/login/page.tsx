@@ -5,7 +5,6 @@ type LoginPageProps = {
     identifier?: string;
     error?: string;
     smsOptInPending?: string;
-    remember?: string;
     passkeySetupPending?: string;
     destination?: string;
     otpPending?: string;
@@ -18,7 +17,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     identifier,
     error,
     smsOptInPending,
-    remember,
     passkeySetupPending,
     destination,
     otpPending,
@@ -30,7 +28,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       identifier={identifier}
       error={error}
       smsOptInPending={smsOptInPending}
-      remember={remember}
       passkeySetupPending={passkeySetupPending}
       destination={destination}
       otpPending={otpPending}

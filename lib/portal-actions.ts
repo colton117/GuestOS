@@ -18,6 +18,7 @@ import {
   signInGuest,
 } from "@/lib/portal";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { logActivity } from "@/lib/activity-log";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   createGuestLoginCode,
@@ -65,7 +66,6 @@ async function syncVehicleDefaults(guestId: string, vehicleId: string) {
  */
 export async function lookupGuestAction(formData: FormData) {
   const identifier = String(formData.get("identifier") ?? "").trim();
-  const remember = parseBoolean(formData.get("remember"));
 
   if (!identifier) {
     redirect("/login");
@@ -87,8 +87,6 @@ export async function lookupGuestAction(formData: FormData) {
     redirect(`/login?identifier=${encodeURIComponent(identifier)}`);
   }
 
-  const rememberParam = remember ? "&remember=1" : "";
-
   try {
     const code = await createGuestLoginCode(guest.id);
     await sendGuestLoginCodeEmail(guest.email, code);
@@ -97,7 +95,7 @@ export async function lookupGuestAction(formData: FormData) {
       // A code already went out within the last minute — it's presumably
       // still sitting in their inbox, so just take them to the entry
       // screen instead of pretending nothing was sent.
-      redirect(`/login?otpPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+      redirect(`/login?otpPending=${encodeURIComponent(guest.id)}`);
     }
 
     console.error("[GuestOS] Failed to send guest sign-in code.", error);
@@ -108,7 +106,7 @@ export async function lookupGuestAction(formData: FormData) {
     );
   }
 
-  redirect(`/login?otpPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+  redirect(`/login?otpPending=${encodeURIComponent(guest.id)}`);
 }
 
 /**
@@ -119,8 +117,6 @@ export async function lookupGuestAction(formData: FormData) {
 export async function verifyLoginCodeAction(formData: FormData) {
   const guestId = String(formData.get("guestId") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim();
-  const remember = parseBoolean(formData.get("remember"));
-  const rememberParam = remember ? "&remember=1" : "";
 
   if (!guestId) {
     redirect("/login");
@@ -130,7 +126,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   if (!allowed) {
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "Too many attempts. Please wait a minute and try again.",
       )}`,
     );
@@ -140,7 +136,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   if (result === "too_many_attempts") {
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "Too many incorrect attempts. Request a new code to try again.",
       )}`,
     );
@@ -148,7 +144,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   if (result === "expired") {
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "That code expired. Request a new one.",
       )}`,
     );
@@ -156,7 +152,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   if (result === "invalid") {
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "That code isn't right. Double check your email and try again.",
       )}`,
     );
@@ -169,10 +165,10 @@ export async function verifyLoginCodeAction(formData: FormData) {
   }
 
   if (!guest.smsOptIn) {
-    redirect(`/login?smsOptInPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+    redirect(`/login?smsOptInPending=${encodeURIComponent(guest.id)}`);
   }
 
-  await signInGuest(guest.id, remember);
+  await signInGuest(guest.id);
 
   const destination = await getGuestPortalDestination(guest.id);
   redirect(destination);
@@ -185,8 +181,6 @@ export async function verifyLoginCodeAction(formData: FormData) {
  */
 export async function resendLoginCodeAction(formData: FormData) {
   const guestId = String(formData.get("guestId") ?? "").trim();
-  const remember = parseBoolean(formData.get("remember"));
-  const rememberParam = remember ? "&remember=1" : "";
 
   if (!guestId) {
     redirect("/login");
@@ -196,7 +190,7 @@ export async function resendLoginCodeAction(formData: FormData) {
 
   if (!allowed) {
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "Please wait a bit before requesting another code.",
       )}`,
     );
@@ -214,7 +208,7 @@ export async function resendLoginCodeAction(formData: FormData) {
   } catch (error) {
     if (error instanceof LoginCodeCooldownError) {
       redirect(
-        `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
           `Please wait ${error.retryAfterSeconds}s before requesting another code.`,
         )}`,
       );
@@ -222,13 +216,13 @@ export async function resendLoginCodeAction(formData: FormData) {
 
     console.error("[GuestOS] Failed to resend guest sign-in code.", error);
     redirect(
-      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+      `/login?otpPending=${encodeURIComponent(guestId)}&error=${encodeURIComponent(
         "We couldn't send a new code right now. Please try again in a moment.",
       )}`,
     );
   }
 
-  redirect(`/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&sent=1`);
+  redirect(`/login?otpPending=${encodeURIComponent(guestId)}&sent=1`);
 }
 
 /**
@@ -238,7 +232,6 @@ export async function resendLoginCodeAction(formData: FormData) {
  */
 export async function confirmSmsOptInAction(formData: FormData) {
   const guestId = String(formData.get("guestId") ?? "").trim();
-  const remember = parseBoolean(formData.get("remember"));
   const smsOptIn = parseBoolean(formData.get("smsConsent"));
 
   if (!guestId) {
@@ -258,7 +251,7 @@ export async function confirmSmsOptInAction(formData: FormData) {
     });
   }
 
-  await signInGuest(guestId, remember);
+  await signInGuest(guestId);
 
   const destination = await getGuestPortalDestination(guestId);
   redirect(destination);
@@ -270,7 +263,6 @@ export async function createGuestAction(formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
-  const remember = parseBoolean(formData.get("remember"));
   const smsOptIn = Boolean(formData.get("smsConsent"));
 
   if (!firstName || !lastName || !email || !phone) {
@@ -337,7 +329,7 @@ export async function createGuestAction(formData: FormData) {
     throw error;
   }
 
-  await signInGuest(guestId, remember);
+  await signInGuest(guestId);
   redirect(`/login?passkeySetupPending=1&destination=${encodeURIComponent("/request-visit")}`);
 }
 
@@ -368,6 +360,8 @@ export async function updateProfileAction(formData: FormData) {
       phone,
     },
   });
+
+  await logActivity(guest.id, "Updated profile details");
 
   revalidatePath("/current-visit");
   revalidatePath("/profile");
@@ -402,6 +396,8 @@ export async function addVehicleAction(formData: FormData) {
   if (isDefault) {
     await syncVehicleDefaults(guest.id, created.id);
   }
+
+  await logActivity(guest.id, `Added vehicle ${year} ${make} ${model}`);
 
   revalidatePath("/vehicles");
   revalidatePath("/request-visit");
@@ -443,8 +439,11 @@ export async function updateVehicleAction(formData: FormData) {
     await syncVehicleDefaults(guest.id, vehicle.id);
   }
 
+  await logActivity(guest.id, `Updated vehicle ${year} ${make} ${model}`);
+
   revalidatePath("/vehicles");
   revalidatePath("/request-visit");
+  redirect("/vehicles");
 }
 
 export async function deleteVehicleAction(formData: FormData) {
@@ -520,6 +519,11 @@ export async function requestVisitAction(formData: FormData) {
     },
   });
 
+  await logActivity(
+    guest.id,
+    `Requested a visit for ${arrivalDateTime.toLocaleString()}`,
+  );
+
   revalidatePath("/visits");
   revalidatePath("/requests");
   revalidatePath("/current-visit");
@@ -570,10 +574,17 @@ export async function approveVisitAction(formData: FormData) {
 
   // Atomic status-guarded update: only transitions a visit that is still
   // PENDING, so a double-click or a concurrent deny can't stomp each other.
-  await prisma.visit.updateMany({
+  const result = await prisma.visit.updateMany({
     where: { id: visitId, status: "PENDING" },
     data: { status: "APPROVED" },
   });
+
+  if (result.count > 0) {
+    const visit = await prisma.visit.findUnique({ where: { id: visitId } });
+    if (visit) {
+      await logActivity(visit.guestId, "Visit request approved");
+    }
+  }
 
   revalidatePath("/requests");
   revalidatePath("/current-visit");
@@ -588,10 +599,17 @@ export async function denyVisitAction(formData: FormData) {
 
   const visitId = String(formData.get("visitId") ?? "");
 
-  await prisma.visit.updateMany({
+  const result = await prisma.visit.updateMany({
     where: { id: visitId, status: "PENDING" },
     data: { status: "DENIED" },
   });
+
+  if (result.count > 0) {
+    const visit = await prisma.visit.findUnique({ where: { id: visitId } });
+    if (visit) {
+      await logActivity(visit.guestId, "Visit request denied");
+    }
+  }
 
   revalidatePath("/requests");
   revalidatePath("/current-visit");
@@ -599,6 +617,15 @@ export async function denyVisitAction(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/host");
   revalidatePath("/visits");
+}
+
+export async function setRememberDeviceAction(formData: FormData) {
+  const guest = await requireCurrentGuest();
+  const remember = parseBoolean(formData.get("remember"));
+
+  await signInGuest(guest.id, remember);
+
+  revalidatePath("/profile");
 }
 
 export async function deleteGuestCredentialAction(formData: FormData) {
@@ -624,6 +651,7 @@ export async function cancelVisitRequestAction(formData: FormData) {
       where: { id: visitId, guestId },
       data: { status: "DENIED" },
     });
+    await logActivity(guestId, "Cancelled a visit request");
   }
 
   revalidatePath("/current-visit");

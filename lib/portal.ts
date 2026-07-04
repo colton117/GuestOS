@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 export const PORTAL_GUEST_COOKIE = "guestos_portal_guest_id";
+export const REMEMBER_PREFERENCE_COOKIE = "guestos_remember_pref";
 const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
 
 /**
@@ -12,8 +13,14 @@ const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
  * endpoint, and this function sets the session cookie for whatever guestId
  * it's given with no ownership check. Exporting it from an actions file
  * would let anyone sign in as any guest by ID.
+ *
+ * `remember` defaults to true — guests are remembered on this device unless
+ * they've explicitly turned that off in Profile settings. The preference is
+ * mirrored into a second cookie purely so the profile page can read back and
+ * display the current setting (the guest-id cookie itself is httpOnly and
+ * its maxAge isn't introspectable from an incoming request).
  */
-export async function signInGuest(guestId: string, remember: boolean = false) {
+export async function signInGuest(guestId: string, remember: boolean = true) {
   const cookieStore = await cookies();
   cookieStore.set(PORTAL_GUEST_COOKIE, guestId, {
     path: "/",
@@ -21,6 +28,17 @@ export async function signInGuest(guestId: string, remember: boolean = false) {
     sameSite: "lax",
     ...(remember ? { maxAge: REMEMBER_ME_MAX_AGE } : {}),
   });
+  cookieStore.set(REMEMBER_PREFERENCE_COOKIE, remember ? "1" : "0", {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    ...(remember ? { maxAge: REMEMBER_ME_MAX_AGE } : {}),
+  });
+}
+
+export async function getRememberPreference(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return cookieStore.get(REMEMBER_PREFERENCE_COOKIE)?.value !== "0";
 }
 
 type PortalVisit = {
@@ -265,6 +283,28 @@ export async function getGuestVisits(guestId: string) {
   });
 
   return classifyVisits(visits);
+}
+
+export async function getGuestUpcomingAndPendingVisits(
+  guestId: string,
+  excludeVisitId?: string,
+) {
+  const now = new Date();
+
+  return prisma.visit.findMany({
+    where: {
+      guestId,
+      ...(excludeVisitId ? { NOT: { id: excludeVisitId } } : {}),
+      OR: [
+        { status: "PENDING" },
+        { status: "APPROVED", arrivalDateTime: { gt: now } },
+      ],
+    },
+    orderBy: [{ arrivalDateTime: "asc" }],
+    include: {
+      vehicle: true,
+    },
+  });
 }
 
 export async function getGuestVehicles(guestId: string) {

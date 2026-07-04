@@ -66,6 +66,10 @@ export async function getDashboardData() {
   };
 }
 
+export async function getPendingRequestCount() {
+  return prisma.visit.count({ where: { status: "PENDING" } });
+}
+
 export async function getGuests(query: string) {
   const where = buildGuestSearchWhere(query);
 

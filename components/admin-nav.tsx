@@ -11,14 +11,14 @@ import {
 } from "lucide-react";
 
 const links = [
-  { href: "/host", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/host", label: "Overview", icon: LayoutDashboard },
   { href: "/guests", label: "Guests", icon: Users },
   { href: "/requests", label: "Requests", icon: ClipboardList },
   { href: "/quick-register", label: "Quick Register", icon: PenSquare },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
-export function AdminNav() {
+export function AdminNav({ pendingRequestCount = 0 }: { pendingRequestCount?: number }) {
   const pathname = usePathname();
 
   return (
@@ -39,6 +39,11 @@ export function AdminNav() {
           >
             <link.icon className="h-4 w-4" />
             {link.label}
+            {link.href === "/requests" && pendingRequestCount > 0 ? (
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--gos-warning)] px-1.5 text-xs font-semibold text-white">
+                {pendingRequestCount}
+              </span>
+            ) : null}
           </Link>
         );
       })}

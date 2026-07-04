@@ -19,84 +19,14 @@ export default async function HostDashboardPage() {
       <div className="space-y-6">
         <div>
           <p className="gos-section-title text-[0.72rem] font-semibold">
-            Dashboard
+            Overview
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
             Welcome back
           </h1>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="gos-panel gos-card-inner">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-              On Property
-            </p>
-            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
-              {guestsOnProperty.length}
-            </p>
-          </div>
-          <div className="gos-panel gos-card-inner">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-              Pending Requests
-            </p>
-            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
-              {pendingRequests.length}
-            </p>
-          </div>
-          <div className="gos-panel gos-card-inner">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-              Upcoming Visits
-            </p>
-            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
-              {upcomingVisits.length}
-            </p>
-          </div>
-        </div>
-
-        <SectionCard title="Guests On Property">
-          <div className="space-y-4">
-            {guestsOnProperty.length === 0 ? (
-              <p className="text-sm text-[color:var(--gos-muted)]">
-                No guests currently on property.
-              </p>
-            ) : (
-              guestsOnProperty.map((visit) => (
-                <div key={visit.id} className="gos-panel gos-card-inner">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Guest
-                      </p>
-                      <p className="mt-1 text-sm font-medium text-[color:var(--gos-primary)]">
-                        {visit.guest.firstName} {visit.guest.lastName}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Arrived
-                      </p>
-                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
-                        {visit.arrivalDateTime.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Vehicle
-                      </p>
-                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
-                        {visit.vehicle
-                          ? `${visit.vehicle.year} ${visit.vehicle.make} ${visit.vehicle.model}`
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Pending Requests">
+        <SectionCard title="Pending Requests" accent={pendingRequests.length > 0}>
           <div className="space-y-4">
             {pendingRequests.length === 0 ? (
               <p className="text-sm text-[color:var(--gos-muted)]">
@@ -170,6 +100,76 @@ export default async function HostDashboardPage() {
             >
               View all requests
             </Link>
+          </div>
+        </SectionCard>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="gos-panel gos-card-inner">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+              On Property
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
+              {guestsOnProperty.length}
+            </p>
+          </div>
+          <div className="gos-panel gos-card-inner">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+              Pending Requests
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
+              {pendingRequests.length}
+            </p>
+          </div>
+          <div className="gos-panel gos-card-inner">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+              Upcoming Visits
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
+              {upcomingVisits.length}
+            </p>
+          </div>
+        </div>
+
+        <SectionCard title="Guests On Property">
+          <div className="space-y-4">
+            {guestsOnProperty.length === 0 ? (
+              <p className="text-sm text-[color:var(--gos-muted)]">
+                No guests currently on property.
+              </p>
+            ) : (
+              guestsOnProperty.map((visit) => (
+                <div key={visit.id} className="gos-panel gos-card-inner">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Guest
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[color:var(--gos-primary)]">
+                        {visit.guest.firstName} {visit.guest.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Arrived
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
+                        {visit.arrivalDateTime.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Vehicle
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
+                        {visit.vehicle
+                          ? `${visit.vehicle.year} ${visit.vehicle.make} ${visit.vehicle.model}`
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </SectionCard>
 

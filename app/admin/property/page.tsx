@@ -8,6 +8,7 @@ import {
   saveBrandingAction,
   saveDoorAction,
   saveHomeAssistantAction,
+  saveMaxParkingDurationAction,
   saveNotificationAction,
   testHomeAssistantAction,
 } from "@/lib/settings-actions";
@@ -123,6 +124,28 @@ export default async function AdminPropertyPage({
               </SubmitButton>
             </form>
           </div>
+        </SectionCard>
+
+        <SectionCard title="Parking">
+          <form action={saveMaxParkingDurationAction} className="space-y-4">
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Maximum Parking Duration (Days)
+              </span>
+              <input
+                type="number"
+                name="maximumParkingDuration"
+                defaultValue={data.parking?.maximumParkingDuration ?? 7}
+                className="gos-input text-sm"
+              />
+            </label>
+            <SubmitButton
+              pendingLabel="Saving…"
+              className="gos-button-primary w-full text-sm sm:w-auto"
+            >
+              Save Parking Settings
+            </SubmitButton>
+          </form>
         </SectionCard>
 
         <SectionCard title="Doors">

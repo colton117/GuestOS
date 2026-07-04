@@ -19,7 +19,11 @@ import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { PropertyMapEngine } from "@/components/property-map-engine";
 import { cancelVisitRequestAction } from "@/lib/portal-actions";
-import { getCurrentGuest, getGuestVisitState } from "@/lib/portal";
+import {
+  getCurrentGuest,
+  getGuestUpcomingAndPendingVisits,
+  getGuestVisitState,
+} from "@/lib/portal";
 import { getGuestBranding } from "@/lib/branding";
 import { propertyMapFloors } from "@/lib/property-map";
 
@@ -82,14 +86,43 @@ export default async function CurrentVisitPage() {
 
   const branding = await getGuestBranding();
   const state = await getGuestVisitState(guest.id);
-
-  if (state.kind === "no_visit") {
-    redirect("/request-visit");
-  }
-
   const visit = state.visit;
   const propertyName = branding.welcomeMessage ?? "4123 Cedar Springs";
   const guestName = `${guest.firstName} ${guest.lastName}`;
+  const upcomingAndPending = await getGuestUpcomingAndPendingVisits(
+    guest.id,
+    visit?.id,
+  );
+
+  if (state.kind === "no_visit") {
+    return (
+      <PortalShell guestName={guestName}>
+        <div className="space-y-6 lg:space-y-8">
+          <section className="gos-card overflow-hidden gos-fade-in">
+            <div className="px-6 py-8 sm:px-8 sm:py-10">
+              <p className="gos-badge">Dashboard</p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
+                Welcome back, {guest.firstName}
+              </h1>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
+                You don&apos;t have a visit scheduled yet. Request one whenever you&apos;re ready.
+              </p>
+              <div className="mt-6">
+                <Link href="/request-visit" className="gos-button-primary">
+                  <ArrowRight className="h-4 w-4" />
+                  Request a Visit
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <SectionCard title="Upcoming & Pending">
+            <UpcomingAndPendingList visits={upcomingAndPending} />
+          </SectionCard>
+        </div>
+      </PortalShell>
+    );
+  }
 
   return (
     <PortalShell guestName={guestName}>
@@ -241,6 +274,12 @@ export default async function CurrentVisitPage() {
             </div>
           </div>
         </section>
+
+        {upcomingAndPending.length > 0 ? (
+          <SectionCard title="Upcoming & Pending">
+            <UpcomingAndPendingList visits={upcomingAndPending} />
+          </SectionCard>
+        ) : null}
 
         {state.kind === "pending_visit_request" && visit ? (
           <SectionCard title="Pending Approval">
@@ -425,6 +464,46 @@ function InfoTile({
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+type UpcomingOrPendingVisit = {
+  id: string;
+  status: string;
+  arrivalDateTime: Date;
+  vehicle: { year: number; make: string; model: string; plate: string } | null;
+};
+
+function UpcomingAndPendingList({ visits }: { visits: UpcomingOrPendingVisit[] }) {
+  if (visits.length === 0) {
+    return (
+      <p className="text-sm text-[color:var(--gos-muted)]">
+        No upcoming or pending visits.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {visits.map((visit) => (
+        <div
+          key={visit.id}
+          className="gos-panel flex flex-wrap items-center justify-between gap-2 p-4 text-sm"
+        >
+          <span className={`gos-badge ${getStatusTone(
+            visit.status === "PENDING" ? "pending_visit_request" : "upcoming_approved_visit",
+          )}`}>
+            {visit.status === "PENDING" ? "Pending Approval" : "Approved"}
+          </span>
+          <span className="font-medium text-[color:var(--gos-primary)]">
+            {formatDateTime(visit.arrivalDateTime)}
+          </span>
+          <span className="text-[color:var(--gos-muted)]">
+            {renderVehicleLabel(visit.vehicle) ?? "No vehicle assigned"}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

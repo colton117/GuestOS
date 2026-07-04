@@ -12,10 +12,10 @@ import {
 import { clearGuestAction } from "@/lib/portal-actions";
 
 const links = [
-  { href: "/current-visit", label: "Current Visit", icon: Building2 },
+  { href: "/current-visit", label: "Dashboard", icon: Building2 },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },
   { href: "/profile", label: "Profile", icon: UserRound },
-  { href: "/visits", label: "History", icon: Clock3 },
+  { href: "/visits", label: "Activity", icon: Clock3 },
 ];
 
 export function PortalNav({ guestName }: { guestName?: string }) {

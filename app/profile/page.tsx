@@ -4,8 +4,8 @@ import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
 import { PasskeyManager } from "@/components/passkey-manager";
-import { requireCurrentGuest } from "@/lib/portal";
-import { updateProfileAction } from "@/lib/portal-actions";
+import { getRememberPreference, requireCurrentGuest } from "@/lib/portal";
+import { setRememberDeviceAction, updateProfileAction } from "@/lib/portal-actions";
 
 const CREATED_LABEL_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -22,6 +22,7 @@ type ProfilePageProps = {
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const guest = await requireCurrentGuest();
   const { error } = (await searchParams) ?? {};
+  const rememberDevice = await getRememberPreference();
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
@@ -101,6 +102,28 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 Save Changes
               </SubmitButton>
             </div>
+          </form>
+        </SectionCard>
+
+        <SectionCard title="Sign-in">
+          <form action={setRememberDeviceAction} className="space-y-4">
+            <label className="flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4">
+              <input
+                type="checkbox"
+                name="remember"
+                defaultChecked={rememberDevice}
+                className="h-4 w-4 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
+              />
+              <span className="text-sm text-[color:var(--gos-text)]">
+                Stay signed in on this device for 90 days
+              </span>
+            </label>
+            <SubmitButton
+              pendingLabel="Saving…"
+              className="gos-button-secondary w-full sm:w-auto"
+            >
+              Update
+            </SubmitButton>
           </form>
         </SectionCard>
 

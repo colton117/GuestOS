@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   });
 
   const destination = guest && !guest.smsOptIn
-    ? `/login?smsOptInPending=${encodeURIComponent(storedCredential.guestId)}&remember=1`
+    ? `/login?smsOptInPending=${encodeURIComponent(storedCredential.guestId)}`
     : await getGuestPortalDestination(storedCredential.guestId);
 
   return NextResponse.json({ verified: true, destination });

@@ -1,7 +1,8 @@
-import { Clock3, MapPin, ShieldCheck } from "lucide-react";
+import { Clock3, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { getGuestVisits, requireCurrentGuest } from "@/lib/portal";
+import { getGuestActivityLog } from "@/lib/activity-log";
 
 export const dynamic = "force-dynamic";
 
@@ -23,105 +24,132 @@ function statusTone(status: string) {
   }
 }
 
+type VisitRow = {
+  id: string;
+  arrivalDateTime: Date;
+  departureDateTime: Date | null;
+  parkingRequired: boolean;
+  buildingAccessRequired: boolean;
+  apartmentAccessRequired: boolean;
+  status: string;
+};
+
+type FeedItem =
+  | { kind: "visit"; timestamp: Date; visit: VisitRow }
+  | { kind: "log"; timestamp: Date; message: string; id: string };
+
 export default async function VisitsPage() {
   const guest = await requireCurrentGuest();
   const visits = await getGuestVisits(guest.id);
+  const activityLog = await getGuestActivityLog(guest.id);
+
+  const allVisits = [...visits.current, ...visits.upcoming, ...visits.past];
+
+  const feed: FeedItem[] = [
+    ...allVisits.map((visit) => ({
+      kind: "visit" as const,
+      timestamp: visit.arrivalDateTime,
+      visit,
+    })),
+    ...activityLog.map((entry) => ({
+      kind: "log" as const,
+      timestamp: entry.createdAt,
+      message: entry.message,
+      id: entry.id,
+    })),
+  ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
       <div className="space-y-6 lg:space-y-8">
         <section className="gos-card overflow-hidden gos-fade-in">
           <div className="px-6 py-8 sm:px-8 sm:py-10">
-            <p className="gos-badge">History</p>
+            <p className="gos-badge">Activity</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
-              Your visits
+              Your activity
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
-              See what&apos;s coming up, what&apos;s happening now, and what&apos;s already happened.
+              Your visits and account activity, together in one feed.
             </p>
           </div>
         </section>
 
-        <SectionCard title="Current">
-          <Timeline visits={visits.current} emptyText="No current visits." />
-        </SectionCard>
-
-        <SectionCard title="Upcoming">
-          <Timeline visits={visits.upcoming} emptyText="No upcoming visits." />
-        </SectionCard>
-
-        <SectionCard title="Past">
-          <Timeline visits={visits.past} emptyText="No past visits." />
+        <SectionCard title="Activity">
+          {feed.length === 0 ? (
+            <div className="gos-panel flex items-start gap-4 p-6">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
+                <Clock3 className="h-6 w-6 text-[color:var(--gos-primary)]" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-[color:var(--gos-primary)]">
+                  No activity yet
+                </p>
+                <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
+                  Your visits and account activity will show up here.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {feed.map((item) =>
+                item.kind === "visit" ? (
+                  <VisitCard key={`visit-${item.visit.id}`} visit={item.visit} />
+                ) : (
+                  <LogRow key={`log-${item.id}`} message={item.message} timestamp={item.timestamp} />
+                ),
+              )}
+            </div>
+          )}
         </SectionCard>
       </div>
     </PortalShell>
   );
 }
 
-function Timeline({
-  visits,
-  emptyText,
-}: {
-  visits: Array<{
-    id: string;
-    arrivalDateTime: Date;
-    departureDateTime: Date | null;
-    parkingRequired: boolean;
-    buildingAccessRequired: boolean;
-    apartmentAccessRequired: boolean;
-    status: string;
-  }>;
-  emptyText: string;
-}) {
-  if (visits.length === 0) {
-    return (
-      <div className="gos-panel flex items-start gap-4 p-6">
-        <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
-          <Clock3 className="h-6 w-6 text-[color:var(--gos-primary)]" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-base font-semibold text-[color:var(--gos-primary)]">
-            No visits yet
-          </p>
-          <p className="text-sm leading-6 text-[color:var(--gos-muted)]">{emptyText}</p>
+function VisitCard({ visit }: { visit: VisitRow }) {
+  return (
+    <article className="gos-panel p-5 gos-fade-in">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <span className={`gos-badge ${statusTone(visit.status)}`}>
+              {visit.status}
+            </span>
+            <span className="text-sm text-[color:var(--gos-muted)]">
+              {formatDate(visit.arrivalDateTime)}
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Stat icon={Clock3} label="Arrival" value={formatDate(visit.arrivalDateTime)} />
+            <Stat icon={MapPin} label="Departure" value={visit.departureDateTime ? formatDate(visit.departureDateTime) : "—"} />
+            <Stat
+              icon={ShieldCheck}
+              label="Access"
+              value={[
+                visit.parkingRequired ? "Parking" : null,
+                visit.buildingAccessRequired ? "Building" : null,
+                visit.apartmentAccessRequired ? "Apartment" : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "None"}
+            />
+          </div>
         </div>
       </div>
-    );
-  }
+    </article>
+  );
+}
 
+function LogRow({ message, timestamp }: { message: string; timestamp: Date }) {
   return (
-    <div className="space-y-4">
-      {visits.map((visit) => (
-        <article key={visit.id} className="gos-panel p-5 gos-fade-in">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className={`gos-badge ${statusTone(visit.status)}`}>
-                  {visit.status}
-                </span>
-                <span className="text-sm text-[color:var(--gos-muted)]">
-                  {formatDate(visit.arrivalDateTime)}
-                </span>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Stat icon={Clock3} label="Arrival" value={formatDate(visit.arrivalDateTime)} />
-                <Stat icon={MapPin} label="Departure" value={visit.departureDateTime ? formatDate(visit.departureDateTime) : "—"} />
-                <Stat
-                  icon={ShieldCheck}
-                  label="Access"
-                  value={[
-                    visit.parkingRequired ? "Parking" : null,
-                    visit.buildingAccessRequired ? "Building" : null,
-                    visit.apartmentAccessRequired ? "Apartment" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "None"}
-                />
-              </div>
-            </div>
-          </div>
-        </article>
-      ))}
+    <div className="gos-panel flex items-center gap-4 p-4 gos-fade-in">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[rgba(31,46,39,0.06)]">
+        <Sparkles className="h-4 w-4 text-[color:var(--gos-accent)]" />
+      </div>
+      <div>
+        <p className="text-sm text-[color:var(--gos-text)]">{message}</p>
+        <p className="mt-1 text-xs text-[color:var(--gos-muted)]">{formatDate(timestamp)}</p>
+      </div>
     </div>
   );
 }

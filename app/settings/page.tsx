@@ -113,17 +113,6 @@ export default async function SettingsPage() {
                 Parking Enabled
               </span>
             </label>
-            <label className="gos-label space-y-2">
-              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                Maximum Parking Duration (Days)
-              </span>
-              <input
-                type="number"
-                name="maximumParkingDuration"
-                defaultValue={data.parking?.maximumParkingDuration ?? 7}
-                className="gos-input text-sm"
-              />
-            </label>
             <SubmitButton
               pendingLabel="Saving…"
               className="gos-button-primary w-full text-sm sm:w-auto"

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { CarFront, CheckCircle2, PlusCircle, PencilLine, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
+import { Modal } from "@/components/ui/modal";
+import { VehicleFormFields } from "@/components/vehicle-form-fields";
 import {
   addVehicleAction,
   deleteVehicleAction,
@@ -88,16 +89,18 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                       <PencilLine className="h-4 w-4" />
                       Edit
                     </Link>
-                    <form action={setDefaultVehicleAction}>
-                      <input type="hidden" name="vehicleId" value={vehicle.id} />
-                      <SubmitButton
-                        pendingLabel="Setting…"
-                        className="gos-button-secondary text-xs"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Set Default
-                      </SubmitButton>
-                    </form>
+                    {vehicle.isDefault ? null : (
+                      <form action={setDefaultVehicleAction}>
+                        <input type="hidden" name="vehicleId" value={vehicle.id} />
+                        <SubmitButton
+                          pendingLabel="Setting…"
+                          className="gos-button-secondary text-xs"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Set Default
+                        </SubmitButton>
+                      </form>
+                    )}
                     <form action={deleteVehicleAction}>
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
                       <SubmitButton
@@ -116,79 +119,15 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
         </SectionCard>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-          <SectionCard title={editingVehicle ? "Edit Vehicle" : "Add Vehicle"}>
-            <form
-              action={editingVehicle ? updateVehicleAction : addVehicleAction}
-              className="grid gap-4 md:grid-cols-2"
-            >
-              {editingVehicle ? (
-                <input type="hidden" name="vehicleId" value={editingVehicle.id} />
-              ) : null}
-              <Field label="Make">
-                <input
-                  name="make"
-                  defaultValue={editingVehicle?.make ?? ""}
-                  autoComplete="off"
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="Model">
-                <input
-                  name="model"
-                  defaultValue={editingVehicle?.model ?? ""}
-                  autoComplete="off"
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="Year">
-                <input
-                  name="year"
-                  type="number"
-                  defaultValue={editingVehicle?.year ?? 2024}
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="Color">
-                <input
-                  name="color"
-                  defaultValue={editingVehicle?.color ?? ""}
-                  autoComplete="off"
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="Plate">
-                <input
-                  name="plate"
-                  defaultValue={editingVehicle?.plate ?? ""}
-                  autoComplete="off"
-                  className="gos-input"
-                />
-              </Field>
-              <Field label="State">
-                <input
-                  name="state"
-                  defaultValue={editingVehicle?.state ?? ""}
-                  autoComplete="off"
-                  className="gos-input"
-                />
-              </Field>
-              <label className="md:col-span-2 flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4">
-                <input
-                  type="checkbox"
-                  name="isDefault"
-                  defaultChecked={editingVehicle?.isDefault ?? false}
-                  className="h-4 w-4 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
-                />
-                <span className="text-sm text-[color:var(--gos-text)]">
-                  Set as primary vehicle
-                </span>
-              </label>
+          <SectionCard title="Add Vehicle">
+            <form action={addVehicleAction} className="grid gap-4 md:grid-cols-2">
+              <VehicleFormFields />
               <div className="md:col-span-2 flex justify-end">
                 <SubmitButton
                   pendingLabel="Saving…"
                   className="gos-button-primary w-full sm:w-auto"
                 >
-                  {editingVehicle ? "Save Vehicle" : "Add Vehicle"}
+                  Add Vehicle
                 </SubmitButton>
               </div>
             </form>
@@ -203,6 +142,23 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
           </SectionCard>
         </div>
       </div>
+
+      <Modal open={Boolean(editingVehicle)} closeHref="/vehicles" title="Edit Vehicle">
+        {editingVehicle ? (
+          <form action={updateVehicleAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="vehicleId" value={editingVehicle.id} />
+            <VehicleFormFields defaultValues={editingVehicle} />
+            <div className="md:col-span-2 flex justify-end">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full sm:w-auto"
+              >
+                Save Vehicle
+              </SubmitButton>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </PortalShell>
   );
 }
@@ -224,20 +180,5 @@ function EmptyVehiclesState() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="space-y-2">
-      <span className="text-sm font-medium text-[color:var(--gos-primary)]">{label}</span>
-      {children}
-    </label>
   );
 }

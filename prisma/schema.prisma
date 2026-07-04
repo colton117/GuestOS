@@ -8,18 +8,29 @@ datasource db {
 }
 
 model Guest {
-  id          String            @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String            @unique
-  phone       String            @unique
-  smsOptIn    Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  vehicles    Vehicle[]
-  visits      Visit[]
-  credentials GuestCredential[]
-  loginCodes  GuestLoginCode[]
+  id           String            @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String            @unique
+  phone        String            @unique
+  smsOptIn     Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  vehicles     Vehicle[]
+  visits       Visit[]
+  credentials  GuestCredential[]
+  loginCodes   GuestLoginCode[]
+  activityLogs ActivityLog[]
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  guestId   String
+  message   String
+  createdAt DateTime @default(now())
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
 }
 
 model GuestLoginCode {
