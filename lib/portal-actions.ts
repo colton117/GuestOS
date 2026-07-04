@@ -19,7 +19,11 @@ import {
 } from "@/lib/portal";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { createGuestLoginCode, verifyGuestLoginCode } from "@/lib/guest-otp";
+import {
+  createGuestLoginCode,
+  LoginCodeCooldownError,
+  verifyGuestLoginCode,
+} from "@/lib/guest-otp";
 import { sendGuestLoginCodeEmail } from "@/lib/email/resend";
 
 function parseBoolean(value: FormDataEntryValue | null) {
@@ -89,9 +93,16 @@ export async function lookupGuestAction(formData: FormData) {
     const code = await createGuestLoginCode(guest.id);
     await sendGuestLoginCodeEmail(guest.email, code);
   } catch (error) {
+    if (error instanceof LoginCodeCooldownError) {
+      // A code already went out within the last minute — it's presumably
+      // still sitting in their inbox, so just take them to the entry
+      // screen instead of pretending nothing was sent.
+      redirect(`/login?otpPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+    }
+
     console.error("[GuestOS] Failed to send guest sign-in code.", error);
     redirect(
-      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+      `/login?error=${encodeURIComponent(
         "We couldn't send a sign-in code right now. Please try again in a moment.",
       )}`,
     );
@@ -201,6 +212,14 @@ export async function resendLoginCodeAction(formData: FormData) {
     const code = await createGuestLoginCode(guest.id);
     await sendGuestLoginCodeEmail(guest.email, code);
   } catch (error) {
+    if (error instanceof LoginCodeCooldownError) {
+      redirect(
+        `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+          `Please wait ${error.retryAfterSeconds}s before requesting another code.`,
+        )}`,
+      );
+    }
+
     console.error("[GuestOS] Failed to resend guest sign-in code.", error);
     redirect(
       `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
@@ -580,6 +599,19 @@ export async function denyVisitAction(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/host");
   revalidatePath("/visits");
+}
+
+export async function deleteGuestCredentialAction(formData: FormData) {
+  const guest = await requireCurrentGuest();
+  const credentialId = String(formData.get("credentialId") ?? "");
+
+  // Ownership-guarded: scoping the delete to guestId means a guest can only
+  // ever remove their own passkeys, never another guest's by guessing an id.
+  await prisma.guestCredential.deleteMany({
+    where: { id: credentialId, guestId: guest.id },
+  });
+
+  revalidatePath("/profile");
 }
 
 export async function cancelVisitRequestAction(formData: FormData) {

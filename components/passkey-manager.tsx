@@ -1,20 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Fingerprint, Loader2 } from "lucide-react";
+import { Fingerprint, Loader2, Trash2 } from "lucide-react";
 import {
   browserSupportsWebAuthn,
   startRegistration,
   type PublicKeyCredentialCreationOptionsJSON,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/browser";
+import { deleteGuestCredentialAction } from "@/lib/portal-actions";
 import { guessDeviceLabel } from "@/lib/device-label";
 
-export function PasskeySetupPrompt({ destination }: { destination: string }) {
+export interface GuestCredentialSummary {
+  id: string;
+  deviceLabel: string | null;
+  createdLabel: string;
+}
+
+export function PasskeyManager({
+  credentials,
+}: {
+  credentials: GuestCredentialSummary[];
+}) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [supported, setSupported] = useState(false);
-  const [status, setStatus] = useState<"idle" | "pending" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "registering" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [options, setOptions] = useState<PublicKeyCredentialCreationOptionsJSON | null>(null);
 
@@ -50,13 +62,8 @@ export function PasskeySetupPrompt({ destination }: { destination: string }) {
     }
   }, []);
 
-  function goToDestination() {
-    router.push(destination);
-    router.refresh();
-  }
-
   async function handleSetUp() {
-    setStatus("pending");
+    setStatus("registering");
     setError(null);
 
     try {
@@ -82,6 +89,7 @@ export function PasskeySetupPrompt({ destination }: { destination: string }) {
       }
 
       setStatus("done");
+      router.refresh();
     } catch (caught) {
       if (caught instanceof Error && caught.name === "NotAllowedError") {
         // Guest cancelled the browser's passkey prompt — not an error worth surfacing.
@@ -96,29 +104,65 @@ export function PasskeySetupPrompt({ destination }: { destination: string }) {
     }
   }
 
-  if (status === "done") {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-[color:var(--gos-success)]">
-          Passkey set up. You can sign in with Face ID, Touch ID, or Windows Hello next time.
-        </p>
-        <button type="button" onClick={goToDestination} className="gos-button-primary w-full text-sm">
-          Continue
-        </button>
-      </div>
-    );
+  function handleRemove(credentialId: string) {
+    const formData = new FormData();
+    formData.set("credentialId", credentialId);
+    startTransition(async () => {
+      await deleteGuestCredentialAction(formData);
+      router.refresh();
+    });
   }
 
   return (
     <div className="space-y-4">
+      {credentials.length > 0 ? (
+        <ul className="space-y-2">
+          {credentials.map((credential) => (
+            <li
+              key={credential.id}
+              className="flex items-center justify-between gap-3 rounded-[20px] bg-[rgba(31,46,39,0.04)] px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Fingerprint className="h-4 w-4 text-[color:var(--gos-accent)]" />
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--gos-primary)]">
+                    {credential.deviceLabel ?? "Passkey"}
+                  </p>
+                  <p className="text-xs text-[color:var(--gos-muted)]">
+                    Added {credential.createdLabel}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => handleRemove(credential.id)}
+                className="rounded-full p-2 text-[color:var(--gos-muted)] transition-colors hover:bg-[rgba(166,70,70,0.12)] hover:text-[color:var(--gos-error)] disabled:opacity-50"
+                aria-label={`Remove ${credential.deviceLabel ?? "passkey"}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-[color:var(--gos-muted)]">
+          No passkeys yet. Set one up to sign in with Face ID, Touch ID, or Windows Hello instead of an emailed code.
+        </p>
+      )}
+
+      {status === "done" ? (
+        <p className="text-sm text-[color:var(--gos-success)]">Passkey set up.</p>
+      ) : null}
+
       {supported ? (
         <button
           type="button"
           onClick={handleSetUp}
-          disabled={status === "pending"}
-          className="gos-button-primary w-full text-sm disabled:opacity-60"
+          disabled={status === "registering"}
+          className="gos-button-secondary w-full text-sm disabled:opacity-60 sm:w-auto"
         >
-          {status === "pending" ? (
+          {status === "registering" ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Fingerprint className="h-4 w-4" />
@@ -126,14 +170,8 @@ export function PasskeySetupPrompt({ destination }: { destination: string }) {
           Set up a passkey
         </button>
       ) : null}
-      {error ? <p className="text-center text-sm text-[color:var(--gos-error)]">{error}</p> : null}
-      <button
-        type="button"
-        onClick={goToDestination}
-        className="block w-full text-center text-sm text-[color:var(--gos-muted)] underline underline-offset-4"
-      >
-        Skip for now
-      </button>
+
+      {error ? <p className="text-sm text-[color:var(--gos-error)]">{error}</p> : null}
     </div>
   );
 }

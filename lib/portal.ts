@@ -168,6 +168,7 @@ export async function getCurrentGuest() {
     where: { id: guestId },
     include: {
       vehicles: true,
+      credentials: true,
     },
   });
 }

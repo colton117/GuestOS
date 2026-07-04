@@ -44,6 +44,6 @@ export async function sendGuestLoginCodeEmail(to: string, code: string): Promise
   await sendEmail({
     to,
     subject: `Your GuestOS sign-in code: ${code}`,
-    text: `Your GuestOS sign-in code is ${code}.\n\nIt expires in 10 minutes. If you didn't request this, you can ignore this email.`,
+    text: `Your GuestOS sign-in code is ${code}.\n\nIt expires in 5 minutes. If you didn't request this, you can ignore this email.`,
   });
 }

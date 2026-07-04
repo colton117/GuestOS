@@ -76,7 +76,19 @@ export async function POST(request: Request) {
   });
 
   await signInGuest(storedCredential.guestId, true);
-  const destination = await getGuestPortalDestination(storedCredential.guestId);
+
+  // A passkey proves identity just as strongly as the email code does, but
+  // it must still respect the same recurring SMS opt-in prompt the email
+  // path enforces on every login until a guest grants it — otherwise
+  // passkey sign-in would be a silent bypass of that flow.
+  const guest = await prisma.guest.findUnique({
+    where: { id: storedCredential.guestId },
+    select: { smsOptIn: true },
+  });
+
+  const destination = guest && !guest.smsOptIn
+    ? `/login?smsOptInPending=${encodeURIComponent(storedCredential.guestId)}&remember=1`
+    : await getGuestPortalDestination(storedCredential.guestId);
 
   return NextResponse.json({ verified: true, destination });
 }

@@ -3,8 +3,15 @@ import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
+import { PasskeyManager } from "@/components/passkey-manager";
 import { requireCurrentGuest } from "@/lib/portal";
 import { updateProfileAction } from "@/lib/portal-actions";
+
+const CREATED_LABEL_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +102,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </SubmitButton>
             </div>
           </form>
+        </SectionCard>
+
+        <SectionCard title="Passkeys">
+          <PasskeyManager
+            credentials={guest.credentials.map((credential) => ({
+              id: credential.id,
+              deviceLabel: credential.deviceLabel,
+              createdLabel: CREATED_LABEL_FORMATTER.format(credential.createdAt),
+            }))}
+          />
         </SectionCard>
       </div>
     </PortalShell>
