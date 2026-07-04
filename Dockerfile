@@ -7,7 +7,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --chown=1001:1001 . .
+RUN mkdir -p /app/prisma && chown -R 1001:1001 /app/prisma
 RUN npx prisma generate
 RUN npm run build
 
