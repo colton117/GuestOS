@@ -1,13 +1,20 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, Sparkles, ShieldCheck, Building2 } from "lucide-react";
-import { selectGuestAction } from "@/lib/portal-actions";
-import { getLoginGuests } from "@/lib/portal";
+import { createGuestAction, lookupGuestAction } from "@/lib/portal-actions";
 import { getGuestBranding } from "@/lib/branding";
 import { PublicFooter } from "@/components/public-footer";
 
-export async function GuestLogin() {
-  const guests = await getLoginGuests();
+export async function GuestLogin({
+  identifier,
+  error,
+}: {
+  identifier?: string;
+  error?: string;
+}) {
   const branding = await getGuestBranding();
+  const isEmailIdentifier = identifier?.includes("@") ?? false;
+  const showCreateForm = Boolean(identifier);
 
   return (
     <>
@@ -80,40 +87,119 @@ export async function GuestLogin() {
                 <div className="space-y-2">
                   <p className="gos-badge">GuestOS Login</p>
                   <h2 className="text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
-                    Select your guest profile
+                    {showCreateForm ? "Create your account" : "Welcome"}
                   </h2>
                   <p className="text-base leading-7 text-[color:var(--gos-muted)]">
-                    Choose a guest to continue into the current visit workflow.
+                    {showCreateForm
+                      ? "We couldn't find an account with that info. Fill in the rest to get set up."
+                      : "Enter your email or phone number to sign in or create an account."}
                   </p>
                 </div>
               </div>
 
-              <form action={selectGuestAction} className="space-y-4">
-                <label className="gos-label space-y-2">
-                  <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                    Select Guest
-                  </span>
-                  <select
-                    name="guestId"
-                    className="gos-input text-sm"
-                    defaultValue={guests[0]?.id ?? ""}
-                  >
-                    <option value="" disabled>
-                      Choose a guest
-                    </option>
-                    {guests.map((guest) => (
-                      <option key={guest.id} value={guest.id}>
-                        {guest.firstName} {guest.lastName} - {guest.email}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              {error ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
-                <button type="submit" className="gos-button-primary w-full text-sm">
-                  Enter Portal
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </form>
+              {showCreateForm ? (
+                <form action={createGuestAction} className="space-y-4">
+                  <input type="hidden" name="identifier" value={identifier} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="gos-label space-y-2">
+                      <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                        First Name
+                      </span>
+                      <input
+                        name="firstName"
+                        required
+                        autoFocus
+                        className="gos-input text-sm"
+                      />
+                    </label>
+                    <label className="gos-label space-y-2">
+                      <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                        Last Name
+                      </span>
+                      <input name="lastName" required className="gos-input text-sm" />
+                    </label>
+                  </div>
+                  <label className="gos-label space-y-2">
+                    <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                      Email
+                    </span>
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      defaultValue={isEmailIdentifier ? identifier : ""}
+                      className="gos-input text-sm"
+                    />
+                  </label>
+                  <label className="gos-label space-y-2">
+                    <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                      Phone
+                    </span>
+                    <input
+                      name="phone"
+                      type="tel"
+                      required
+                      defaultValue={!isEmailIdentifier ? identifier : ""}
+                      className="gos-input text-sm"
+                    />
+                  </label>
+
+                  <button type="submit" className="gos-button-primary w-full text-sm">
+                    Create Account
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <Link
+                    href="/login"
+                    className="block text-center text-sm text-[color:var(--gos-muted)] underline underline-offset-4"
+                  >
+                    Use a different email or phone
+                  </Link>
+                </form>
+              ) : (
+                <form action={lookupGuestAction} className="space-y-4">
+                  <label className="gos-label space-y-2">
+                    <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                      Email or Phone Number
+                    </span>
+                    <input
+                      name="identifier"
+                      required
+                      autoFocus
+                      placeholder="you@example.com or (555) 123-4567"
+                      className="gos-input text-sm"
+                    />
+                  </label>
+
+                  <button type="submit" className="gos-button-primary w-full text-sm">
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </form>
+              )}
+
+              <div className="flex items-center justify-center gap-4 border-t border-[rgba(31,46,39,0.08)] pt-4 text-xs">
+                <Link
+                  href="/requests"
+                  className="font-medium text-[color:var(--gos-muted)] underline underline-offset-4 hover:text-[color:var(--gos-primary)]"
+                >
+                  Host Dashboard
+                </Link>
+                <span aria-hidden="true" className="text-[color:var(--gos-muted)]">
+                  &middot;
+                </span>
+                <Link
+                  href="/settings"
+                  className="font-medium text-[color:var(--gos-muted)] underline underline-offset-4 hover:text-[color:var(--gos-primary)]"
+                >
+                  Admin Dashboard
+                </Link>
+              </div>
             </div>
           </section>
         </section>

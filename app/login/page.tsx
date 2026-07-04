@@ -1,5 +1,14 @@
 import { GuestLogin } from "@/components/guest-login";
 
-export default function LoginPage() {
-  return <GuestLogin />;
+type LoginPageProps = {
+  searchParams?: Promise<{
+    identifier?: string;
+    error?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { identifier, error } = (await searchParams) ?? {};
+
+  return <GuestLogin identifier={identifier} error={error} />;
 }
