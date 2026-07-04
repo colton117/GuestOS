@@ -3,10 +3,14 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
+  findGuestByIdentifier,
   getGuestPortalDestination,
   getCurrentGuestId,
+  normalizeGuestEmail,
+  normalizeGuestPhone,
   PORTAL_GUEST_COOKIE,
   requireCurrentGuest,
 } from "@/lib/portal";
@@ -27,30 +31,82 @@ async function syncVehicleDefaults(guestId: string, vehicleId: string) {
   });
 }
 
-export async function selectGuestAction(formData: FormData) {
-  const guestId = String(formData.get("guestId") ?? "");
-
-  if (!guestId) {
-    return;
-  }
-
-  const guest = await prisma.guest.findUnique({
-    where: { id: guestId },
-  });
-
-  if (!guest) {
-    return;
-  }
-
+async function signInGuest(guestId: string) {
   const cookieStore = await cookies();
   cookieStore.set(PORTAL_GUEST_COOKIE, guestId, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
   });
+}
 
-  const destination = await getGuestPortalDestination(guestId);
+/**
+ * Looks up a guest by the email or phone they entered. If found, logs them
+ * straight in. If not, sends them to the create-account step, prefilled with
+ * whatever they typed.
+ */
+export async function lookupGuestAction(formData: FormData) {
+  const identifier = String(formData.get("identifier") ?? "").trim();
+
+  if (!identifier) {
+    redirect("/login");
+  }
+
+  const guest = await findGuestByIdentifier(identifier);
+
+  if (!guest) {
+    redirect(`/login?identifier=${encodeURIComponent(identifier)}`);
+  }
+
+  await signInGuest(guest.id);
+
+  const destination = await getGuestPortalDestination(guest.id);
   redirect(destination);
+}
+
+export async function createGuestAction(formData: FormData) {
+  const identifier = String(formData.get("identifier") ?? "").trim();
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  if (!firstName || !lastName || !email || !phone) {
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "Please fill in every field.",
+      )}`,
+    );
+  }
+
+  let guestId: string;
+
+  try {
+    const guest = await prisma.guest.create({
+      data: {
+        firstName,
+        lastName,
+        email: normalizeGuestEmail(email),
+        phone: normalizeGuestPhone(phone),
+      },
+    });
+    guestId = guest.id;
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      redirect(
+        `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+          "That email or phone is already registered. Try looking it up instead.",
+        )}`,
+      );
+    }
+    throw error;
+  }
+
+  await signInGuest(guestId);
+  redirect("/request-visit");
 }
 
 export async function clearGuestAction() {
