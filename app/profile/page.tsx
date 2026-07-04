@@ -2,13 +2,19 @@ import { Mail, Phone, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
+import { SubmitButton } from "@/components/submit-button";
 import { requireCurrentGuest } from "@/lib/portal";
 import { updateProfileAction } from "@/lib/portal-actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
+type ProfilePageProps = {
+  searchParams?: Promise<{ error?: string }>;
+};
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const guest = await requireCurrentGuest();
+  const { error } = (await searchParams) ?? {};
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
@@ -18,10 +24,10 @@ export default async function ProfilePage() {
             <div className="space-y-3">
               <p className="gos-badge">Profile</p>
               <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
-                Guest profile
+                Your profile
               </h1>
               <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
-                Keep your guest identity current so your stay and future visits stay smooth.
+                Keep your contact info up to date so we can reach you during your stay.
               </p>
             </div>
             <div className="flex items-center gap-4 rounded-[28px] bg-[rgba(31,46,39,0.04)] px-5 py-4 shadow-sm">
@@ -40,7 +46,12 @@ export default async function ProfilePage() {
           </div>
         </section>
 
-        <SectionCard title="Editable Details">
+        <SectionCard title="Your Details">
+          {error === "invalid" ? (
+            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              Please check your name, email, and phone number and try again.
+            </div>
+          ) : null}
           <form action={updateProfileAction} className="grid gap-5 md:grid-cols-2">
             <Field label="First Name" icon={UserRound}>
               <input
@@ -76,9 +87,12 @@ export default async function ProfilePage() {
             </Field>
 
             <div className="md:col-span-2 flex justify-end pt-2">
-              <button className="gos-button-primary w-full sm:w-auto">
-                Save Profile
-              </button>
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full sm:w-auto"
+              >
+                Save Changes
+              </SubmitButton>
             </div>
           </form>
         </SectionCard>

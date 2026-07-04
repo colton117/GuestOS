@@ -3,6 +3,7 @@ import { CarFront, CheckCircle2, PlusCircle, PencilLine, Trash2 } from "lucide-r
 import type { ReactNode } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
+import { SubmitButton } from "@/components/submit-button";
 import {
   addVehicleAction,
   deleteVehicleAction,
@@ -35,10 +36,10 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
             <div className="space-y-3">
               <p className="gos-badge">Vehicles</p>
               <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
-                Premium vehicle list
+                Your vehicles
               </h1>
               <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
-                Keep your arrivals simple with clearly marked primary and secondary vehicles.
+                Mark your main vehicle so it&apos;s ready to go when you request a visit.
               </p>
             </div>
             <Link href="/request-visit" className="gos-button-primary">
@@ -89,17 +90,23 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                     </Link>
                     <form action={setDefaultVehicleAction}>
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
-                      <button className="gos-button-secondary text-xs">
+                      <SubmitButton
+                        pendingLabel="Setting…"
+                        className="gos-button-secondary text-xs"
+                      >
                         <CheckCircle2 className="h-4 w-4" />
                         Set Default
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={deleteVehicleAction}>
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
-                      <button className="gos-button-secondary text-xs">
+                      <SubmitButton
+                        pendingLabel="Deleting…"
+                        className="gos-button-secondary text-xs"
+                      >
                         <Trash2 className="h-4 w-4" />
                         Delete
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </article>
@@ -177,23 +184,21 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                 </span>
               </label>
               <div className="md:col-span-2 flex justify-end">
-                <button className="gos-button-primary w-full sm:w-auto">
+                <SubmitButton
+                  pendingLabel="Saving…"
+                  className="gos-button-primary w-full sm:w-auto"
+                >
                   {editingVehicle ? "Save Vehicle" : "Add Vehicle"}
-                </button>
+                </SubmitButton>
               </div>
             </form>
           </SectionCard>
 
-          <SectionCard title="Visit Ready">
-            <div className="space-y-4">
-              <div className="gos-panel p-5">
-                <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
-                  The primary vehicle is used when new visit requests are created.
-                </p>
-              </div>
-              <Link href="/request-visit" className="gos-button-primary w-full">
-                Request Visit
-              </Link>
+          <SectionCard title="Ready for your next visit">
+            <div className="gos-panel p-5">
+              <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
+                We&apos;ll use your primary vehicle when you request a new visit.
+              </p>
             </div>
           </SectionCard>
         </div>
@@ -218,9 +223,6 @@ function EmptyVehiclesState() {
           </p>
         </div>
       </div>
-      <Link href="/request-visit" className="gos-button-primary w-full sm:w-auto">
-        Request Visit
-      </Link>
     </div>
   );
 }

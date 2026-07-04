@@ -38,9 +38,8 @@ export default async function PropertyMapPage() {
               Property Map
             </h1>
             <p className="max-w-3xl text-base leading-7 text-[color:var(--gos-muted)]">
-              {propertyName} is rendered as a reusable SVG engine. Floors, POIs, and route graph
-              scaffolding are data-driven so future indoor navigation can slot in without changing
-              the layout system.
+              Find your way around {propertyName}. Switch floors, tap a point of interest, and get
+              directions to where you&apos;re headed.
             </p>
           </div>
         </section>

@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, PenSquare, Settings2, Users } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  PenSquare,
+  Settings2,
+  Users,
+} from "lucide-react";
 
 const links = [
+  { href: "/host", label: "Dashboard", icon: LayoutDashboard },
   { href: "/guests", label: "Guests", icon: Users },
   { href: "/requests", label: "Requests", icon: ClipboardList },
   { href: "/quick-register", label: "Quick Register", icon: PenSquare },

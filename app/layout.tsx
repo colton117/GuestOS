@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@/styles/globals.css";
+import { EditModeToggle } from "@/components/dev/edit-mode-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {process.env.NODE_ENV !== "production" ? <EditModeToggle /> : null}
+      </body>
     </html>
   );
 }

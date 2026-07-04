@@ -1,9 +1,12 @@
+import { prisma } from "@/lib/prisma";
 import type {
   HomeAssistantConfig,
   HomeAssistantData,
   HomeAssistantRequestOptions,
   HomeAssistantState,
 } from "./types";
+
+const DEFAULT_TIMEOUT_SECONDS = 10;
 
 export class HomeAssistantError extends Error {
   override name = "HomeAssistantError";
@@ -97,11 +100,13 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 export interface HomeAssistantClientOptions extends HomeAssistantRequestOptions {
   baseUrl?: string;
   token?: string;
+  timeoutMs?: number;
 }
 
 export class HomeAssistantClient {
   private readonly baseUrl: string;
   private readonly token: string;
+  private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
   private readonly logger: Pick<Console, "error" | "warn" | "info">;
 
@@ -118,6 +123,7 @@ export class HomeAssistantClient {
 
     this.baseUrl = normalizeBaseUrl(baseUrl);
     this.token = token;
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_SECONDS * 1000;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.logger = options.logger ?? console;
   }
@@ -151,18 +157,26 @@ export class HomeAssistantClient {
         method,
         headers: this.buildHeaders(),
         body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (error) {
-      const details = isFetchOfflineError(error)
-        ? "Home Assistant appears to be offline or unreachable."
-        : "The request could not be completed.";
-      const wrappedError = isFetchOfflineError(error)
+      const isTimeout = error instanceof Error && error.name === "TimeoutError";
+      const details = isTimeout
+        ? `Home Assistant did not respond within ${this.timeoutMs}ms.`
+        : isFetchOfflineError(error)
+          ? "Home Assistant appears to be offline or unreachable."
+          : "The request could not be completed.";
+      const wrappedError = isTimeout
         ? new HomeAssistantOfflineError(formatRequestMessage(method, url, details), {
             cause: error,
           })
-        : new HomeAssistantRequestError(formatRequestMessage(method, url, details), undefined, {
-            cause: error,
-          });
+        : isFetchOfflineError(error)
+          ? new HomeAssistantOfflineError(formatRequestMessage(method, url, details), {
+              cause: error,
+            })
+          : new HomeAssistantRequestError(formatRequestMessage(method, url, details), undefined, {
+              cause: error,
+            });
 
       this.logger.error(wrappedError.message, error);
       throw wrappedError;
@@ -259,10 +273,55 @@ export class HomeAssistantClient {
       eventData,
     );
   }
+
+  /** Hits the Home Assistant root API endpoint to confirm the URL/token are valid. */
+  async ping(): Promise<void> {
+    await this.request("GET", "/api/");
+  }
 }
 
 export function createHomeAssistantClient(
   options: HomeAssistantClientOptions = {},
 ): HomeAssistantClient {
   return new HomeAssistantClient(options);
+}
+
+/**
+ * Resolves Home Assistant connection details from the admin-managed
+ * HomeAssistantSettings DB row, falling back to env vars when the DB
+ * fields are unset. This is the source of truth for real HA calls — the
+ * `/settings` page writes to the DB, so this must read from it too.
+ */
+export async function resolveHomeAssistantConfig(): Promise<
+  HomeAssistantConfig & { timeoutMs: number }
+> {
+  const dbSettings = await prisma.homeAssistantSettings.findUnique({
+    where: { id: 1 },
+  });
+
+  const baseUrl = dbSettings?.haUrl?.trim() || process.env.HOME_ASSISTANT_URL?.trim();
+  const token = dbSettings?.haToken?.trim() || process.env.HOME_ASSISTANT_TOKEN?.trim();
+  const timeoutSeconds = dbSettings?.webhookTimeout ?? DEFAULT_TIMEOUT_SECONDS;
+
+  if (!baseUrl || !token) {
+    throw new HomeAssistantError(
+      "Home Assistant is not configured. Set the HA URL and token in Settings.",
+    );
+  }
+
+  return {
+    baseUrl: normalizeBaseUrl(baseUrl),
+    token,
+    timeoutMs: timeoutSeconds * 1000,
+  };
+}
+
+export async function createHomeAssistantClientFromSettings(): Promise<HomeAssistantClient> {
+  const config = await resolveHomeAssistantConfig();
+  return new HomeAssistantClient(config);
+}
+
+export async function pingHomeAssistant(): Promise<void> {
+  const client = await createHomeAssistantClientFromSettings();
+  await client.ping();
 }

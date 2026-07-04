@@ -47,49 +47,31 @@ export async function POST(_: Request, { params }: AccessRouteParams) {
   const timestamp = new Date().toISOString();
 
   if (!isAccessPointSlug(door)) {
-    return jsonFailure(
-      {
-        timestamp,
-        guestId: null,
-        visitId: null,
-        door,
-        success: false,
-        reason: ACCESS_UNAUTHORIZED_REASON,
-      },
-      404,
-    );
-    logAccessAttempt({
+    const record = {
       timestamp,
       guestId: null,
       visitId: null,
       door,
       success: false,
       reason: ACCESS_UNAUTHORIZED_REASON,
-    });
+    };
+    logAccessAttempt(record);
+    return jsonFailure(record, 404);
   }
 
   const guestId = await getCurrentGuestId();
 
   if (!guestId) {
-    return jsonFailure(
-      {
-        timestamp,
-        guestId: null,
-        visitId: null,
-        door,
-        success: false,
-        reason: ACCESS_UNAUTHORIZED_REASON,
-      },
-      401,
-    );
-    logAccessAttempt({
+    const record = {
       timestamp,
       guestId: null,
       visitId: null,
       door,
       success: false,
       reason: ACCESS_UNAUTHORIZED_REASON,
-    });
+    };
+    logAccessAttempt(record);
+    return jsonFailure(record, 401);
   }
 
   const guest = await prisma.guest.findUnique({
@@ -97,25 +79,16 @@ export async function POST(_: Request, { params }: AccessRouteParams) {
   });
 
   if (!guest) {
-    return jsonFailure(
-      {
-        timestamp,
-        guestId,
-        visitId: null,
-        door,
-        success: false,
-        reason: ACCESS_UNAUTHORIZED_REASON,
-      },
-      401,
-    );
-    logAccessAttempt({
+    const record = {
       timestamp,
       guestId,
       visitId: null,
       door,
       success: false,
       reason: ACCESS_UNAUTHORIZED_REASON,
-    });
+    };
+    logAccessAttempt(record);
+    return jsonFailure(record, 401);
   }
 
   try {

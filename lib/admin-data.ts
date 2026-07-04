@@ -23,16 +23,35 @@ export async function getDashboardData() {
 
   const [pendingRequests, guestsOnProperty, upcomingVisits] =
     await Promise.all([
-      prisma.visit.count({
+      prisma.visit.findMany({
         where: { status: "PENDING" },
+        orderBy: [{ createdAt: "asc" }],
+        include: {
+          guest: {
+            include: {
+              vehicles: true,
+            },
+          },
+          vehicle: true,
+        },
       }),
-      prisma.visit.count({
+      prisma.visit.findMany({
         where: { status: "ACTIVE" },
+        orderBy: [{ arrivalDateTime: "asc" }],
+        include: {
+          guest: true,
+          vehicle: true,
+        },
       }),
-      prisma.visit.count({
+      prisma.visit.findMany({
         where: {
           status: "APPROVED",
           arrivalDateTime: { gte: now },
+        },
+        orderBy: [{ arrivalDateTime: "asc" }],
+        include: {
+          guest: true,
+          vehicle: true,
         },
       }),
     ]);
@@ -41,6 +60,9 @@ export async function getDashboardData() {
     pendingRequests,
     guestsOnProperty,
     upcomingVisits,
+    pendingRequestCount: pendingRequests.length,
+    guestsOnPropertyCount: guestsOnProperty.length,
+    upcomingVisitCount: upcomingVisits.length,
   };
 }
 
@@ -53,6 +75,21 @@ export async function getGuests(query: string) {
     include: {
       vehicles: true,
       visits: true,
+    },
+  });
+}
+
+export async function getGuestById(guestId: string) {
+  return prisma.guest.findUnique({
+    where: { id: guestId },
+    include: {
+      vehicles: {
+        orderBy: [{ isDefault: "desc" }, { make: "asc" }],
+      },
+      visits: {
+        orderBy: [{ arrivalDateTime: "desc" }],
+        include: { vehicle: true },
+      },
     },
   });
 }

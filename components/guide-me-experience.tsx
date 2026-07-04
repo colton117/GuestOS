@@ -262,8 +262,8 @@ export function GuideMeExperience({
                   {propertyName}
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)] sm:text-lg">
-                  Step through the arrival journey in a calm, hotel-style flow.
-                  The future map will plug into these same steps.
+                  We&apos;ll walk you through arrival step by step. The map will plug
+                  into these same steps once it&apos;s ready.
                 </p>
               </div>
 
@@ -296,7 +296,7 @@ export function GuideMeExperience({
                     Progress
                   </p>
                   <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
-                    Arrival engine
+                    Your arrival
                   </h2>
                 </div>
                 {flow ? (
@@ -568,7 +568,7 @@ export function GuideMeExperience({
                 ) : (
                   <div className="gos-panel p-5">
                     <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
-                      You have reached the final step of the guided arrival.
+                      You&apos;ve reached the last step.
                     </p>
                   </div>
                 )}
@@ -593,7 +593,7 @@ export function GuideMeExperience({
             </p>
             <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
               {flow && currentStep
-                ? "The framework is ready for a future interactive map."
+                ? "An interactive map is coming soon."
                 : "Choose a route, then continue step by step."}
             </p>
           </div>

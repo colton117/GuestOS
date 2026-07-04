@@ -38,26 +38,26 @@ export default async function RequestVisitPage() {
                   Request a new visit
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)] sm:text-lg">
-                  A calm, hotel-style booking flow for future stays and guest arrivals.
+                  Let your host know when you&apos;re arriving.
                 </p>
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <Feature icon={CalendarRange} title="Flexible arrival" text="Choose the date and time that works best." />
-                <Feature icon={MapPinned} title="Property aware" text="Keep access and arrival details in one place." />
-                <Feature icon={Sparkles} title="Concierge support" text="Your request is handled in a premium workflow." />
+                <Feature icon={CalendarRange} title="Any time works" text="Pick the date and time that's best for you." />
+                <Feature icon={MapPinned} title="Everything in one place" text="Access and arrival info, together." />
+                <Feature icon={Sparkles} title="We'll notify your host" text="Your host gets notified as soon as you submit." />
               </div>
             </div>
 
             <div className="border-t border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.7)] px-6 py-8 sm:px-8 lg:border-l lg:border-t-0">
               <div className="gos-panel p-5">
                 <p className="text-sm font-semibold text-[color:var(--gos-primary)]">
-                  Booking essentials
+                  What to know
                 </p>
                 <div className="mt-4 space-y-3 text-sm leading-6 text-[color:var(--gos-muted)]">
                   <p>Arrival and departure windows stay easy to review.</p>
                   <p>Vehicle, parking, and access preferences remain optional and explicit.</p>
-                  <p>GuestOS keeps the experience calm and predictable.</p>
+                  <p>You can change these details later if plans shift.</p>
                 </div>
               </div>
             </div>
@@ -184,7 +184,7 @@ function EmptyVehiclePrompt() {
             Add a vehicle first
           </p>
           <p className="max-w-2xl text-sm leading-6 text-[color:var(--gos-muted)]">
-            A vehicle keeps the request workflow calm and complete. Add one, then come back to finish booking.
+            We need a vehicle on file before you can request a visit. Add one, then come back to finish booking.
           </p>
         </div>
       </div>

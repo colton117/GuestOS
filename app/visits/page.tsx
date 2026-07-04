@@ -34,10 +34,10 @@ export default async function VisitsPage() {
           <div className="px-6 py-8 sm:px-8 sm:py-10">
             <p className="gos-badge">History</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
-              Elegant visit timeline
+              Your visits
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[color:var(--gos-muted)]">
-              Review upcoming stays, active visits, and past arrivals in one calm timeline.
+              See what&apos;s coming up, what&apos;s happening now, and what&apos;s already happened.
             </p>
           </div>
         </section>

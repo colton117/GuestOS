@@ -1,5 +1,5 @@
 import { HomeAssistantError, HomeAssistantOfflineError, HomeAssistantRequestError } from "@/lib/homeassistant/client";
-import { createHomeAssistantClient } from "@/lib/homeassistant/client";
+import { createHomeAssistantClientFromSettings } from "@/lib/homeassistant/client";
 import { createHomeAssistantServiceLayer, type HomeAssistantServiceLayer } from "@/lib/homeassistant/services";
 import type { HomeAssistantData } from "@/lib/homeassistant/types";
 import {
@@ -104,18 +104,27 @@ function createAccessAttemptResult(
 }
 
 export class GuestAccessService {
-  private readonly homeAssistant: HomeAssistantServiceLayer;
+  private readonly homeAssistantOverride?: HomeAssistantServiceLayer;
   private readonly getSettingsDataFn: typeof getSettingsData;
   private readonly nowFn: () => Date;
   private readonly logger: Pick<Console, "error" | "info" | "warn">;
 
   constructor(options: AccessServiceOptions = {}) {
-    this.homeAssistant =
-      options.homeAssistant ??
-      createHomeAssistantServiceLayer(createHomeAssistantClient());
+    this.homeAssistantOverride = options.homeAssistant;
     this.getSettingsDataFn = options.getSettingsData ?? getSettingsData;
     this.nowFn = options.now ?? (() => new Date());
     this.logger = options.logger ?? console;
+  }
+
+  // Built per-call (not in the constructor) since resolving the real config
+  // now requires an async DB read of admin-managed HomeAssistantSettings.
+  private async getHomeAssistant(): Promise<HomeAssistantServiceLayer> {
+    if (this.homeAssistantOverride) {
+      return this.homeAssistantOverride;
+    }
+
+    const client = await createHomeAssistantClientFromSettings();
+    return createHomeAssistantServiceLayer(client);
   }
 
   async openAccessPoint(
@@ -211,8 +220,9 @@ export class GuestAccessService {
         configuredDoor?.homeAssistantAction.trim() ||
         accessPoint.defaultHomeAssistantAction;
       const scriptEntityId = toScriptEntityId(homeAssistantAction);
+      const homeAssistant = await this.getHomeAssistant();
 
-      await this.homeAssistant.runScript({
+      await homeAssistant.runScript({
         entity_id: scriptEntityId,
         access_point: slug,
         guest_id: guestId,

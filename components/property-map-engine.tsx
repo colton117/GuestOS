@@ -29,6 +29,13 @@ interface PropertyMapEngineProps {
   onNavigateToPoi?: (poi: PropertyMapPoi) => void;
   onPoiSelect?: (poi: PropertyMapPoi) => void;
   onUnlockPoi?: (poi: PropertyMapPoi) => void;
+  /**
+   * "full" (default) renders the standalone page treatment with its own
+   * heading and SVG-engine badge. "embedded" renders a lighter-weight
+   * treatment meant to sit inside an existing SectionCard (e.g. the
+   * current-visit dashboard), dropping the duplicate heading chrome.
+   */
+  variant?: "full" | "embedded";
 }
 
 interface ViewportTransform {
@@ -86,7 +93,7 @@ function getPoiTone(status: PropertyMapPoi["status"]) {
     case "restricted":
       return "text-[color:var(--gos-warning)] bg-[rgba(184,138,46,0.14)]";
     case "locked":
-      return "text-[color:var(--gos-danger)] bg-[rgba(166,70,70,0.12)]";
+      return "text-[color:var(--gos-error)] bg-[rgba(166,70,70,0.12)]";
     default:
       return "text-[color:var(--gos-primary)] bg-[rgba(31,46,39,0.08)]";
   }
@@ -218,7 +225,9 @@ export function PropertyMapEngine({
   onNavigateToPoi,
   onPoiSelect,
   onUnlockPoi,
+  variant = "full",
 }: PropertyMapEngineProps) {
+  const isEmbedded = variant === "embedded";
   const availableFloors = floors.length > 0 ? floors : propertyMapFloors;
   const defaultFloorId =
     initialFloorId && availableFloors.some((floor) => floor.id === initialFloorId)
@@ -460,7 +469,7 @@ export function PropertyMapEngine({
 
   function selectPoi(poi: PropertyMapPoi) {
     setSelectedPoiId(poi.id);
-    setStatusMessage(`${poi.title} selected.`);
+    setStatusMessage(`Selected ${poi.title}.`);
     onPoiSelect?.(poi);
   }
 
@@ -469,13 +478,13 @@ export function PropertyMapEngine({
       return;
     }
 
-    setStatusMessage(`Unlock action ready for ${poi.title}.`);
+    setStatusMessage(`Ready to unlock ${poi.title}.`);
     onUnlockPoi?.(poi);
   }
 
   function navigateToPoi(poi: PropertyMapPoi) {
     setSelectedPoiId(poi.id);
-    setStatusMessage(`Navigation target set to ${poi.title}.`);
+    setStatusMessage(`Directions set to ${poi.title}.`);
     onNavigateToPoi?.(poi);
   }
 
@@ -483,33 +492,45 @@ export function PropertyMapEngine({
     return (
       <div className="gos-card p-6">
         <p className="text-sm font-semibold text-[color:var(--gos-primary)]">
-          Property map is unavailable.
+          The property map isn&apos;t available right now.
         </p>
         <p className="mt-2 text-sm leading-6 text-[color:var(--gos-muted)]">
-          No floor data was provided to the map engine.
+          No floor data was found.
         </p>
       </div>
     );
   }
 
+  const Wrapper = isEmbedded ? "div" : "section";
+
   return (
     <div className="space-y-5 lg:space-y-6">
-      <section className="gos-card overflow-hidden">
-        <div className="border-b border-[rgba(31,46,39,0.08)] px-5 py-4 sm:px-6 sm:py-5">
+      <Wrapper className={isEmbedded ? "overflow-hidden" : "gos-card overflow-hidden"}>
+        <div
+          className={
+            isEmbedded
+              ? "pb-4"
+              : "border-b border-[rgba(31,46,39,0.08)] px-5 py-4 sm:px-6 sm:py-5"
+          }
+        >
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="space-y-2">
-              <p className="gos-section-title text-[0.72rem] font-semibold">Current Visit</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-3xl">
-                  Property Map
-                </h1>
-                <span className="gos-badge bg-[rgba(168,138,90,0.12)] text-[color:var(--gos-accent)]">
-                  SVG Engine
-                </span>
-              </div>
+              {isEmbedded ? null : (
+                <>
+                  <p className="gos-section-title text-[0.72rem] font-semibold">Current Visit</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-3xl">
+                      Property Map
+                    </h1>
+                    <span className="gos-badge bg-[rgba(168,138,90,0.12)] text-[color:var(--gos-accent)]">
+                      Interactive
+                    </span>
+                  </div>
+                </>
+              )}
               <p className="max-w-3xl text-sm leading-6 text-[color:var(--gos-muted)] sm:text-base">
-                {propertyName ?? "GuestOS"} {guestName ? `for ${guestName}` : ""}. Floor layers, POIs,
-                and route graph scaffolding are all data-driven for the next phase.
+                {propertyName ?? "GuestOS"} {guestName ? `for ${guestName}` : ""}. Pan around, zoom in,
+                and tap a point on the map to see more.
               </p>
             </div>
 
@@ -631,7 +652,7 @@ export function PropertyMapEngine({
                         tabIndex={0}
                         aria-label={`${poi.title}. ${poi.description}`}
                         transform={`translate(${poi.x} ${poi.y})`}
-                        className="cursor-pointer outline-none transition-transform duration-200"
+                        className="cursor-pointer transition-transform duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--gos-accent)]"
                         onClick={() => selectPoi(poi)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -689,12 +710,12 @@ export function PropertyMapEngine({
 
                   {selectedFloor.guestLocation?.floorId === selectedFloor.id ? (
                     <g transform={`translate(${selectedFloor.guestLocation.x} ${selectedFloor.guestLocation.y})`}>
-                      <circle r={15} fill="rgba(59,130,246,0.12)" />
-                      <circle r={8} fill="rgba(59,130,246,0.95)" stroke="#ffffff" strokeWidth={3} />
+                      <circle r={15} fill="rgba(168,138,90,0.16)" />
+                      <circle r={8} fill="rgba(168,138,90,0.95)" stroke="#ffffff" strokeWidth={3} />
                       {selectedFloor.guestLocation.headingDegrees ? (
                         <path
                           d="M 0 -18 L 6 -2 L -6 -2 Z"
-                          fill="rgba(59,130,246,0.95)"
+                          fill="rgba(168,138,90,0.95)"
                           transform={`rotate(${selectedFloor.guestLocation.headingDegrees})`}
                         />
                       ) : null}
@@ -741,7 +762,7 @@ export function PropertyMapEngine({
               <div className="flex items-center gap-3">
                 <Route className="h-5 w-5 text-[color:var(--gos-accent)]" />
                 <p className="text-sm font-semibold text-[color:var(--gos-primary)]">
-                  Route engine scaffold
+                  Route info
                 </p>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -802,10 +823,10 @@ export function PropertyMapEngine({
                   <div className="rounded-[24px] border border-dashed border-[rgba(31,46,39,0.12)] bg-[rgba(255,255,255,0.72)] p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--gos-primary)]">
                       <Sparkles className="h-4 w-4 text-[color:var(--gos-accent)]" />
-                      Reference photo slot
+                      Photo
                     </div>
                     <p className="mt-2 text-sm leading-6 text-[color:var(--gos-muted)]">
-                      {selectedPoi.photo?.caption ?? "Photo support is designed into the engine for future POI imagery."}
+                      {selectedPoi.photo?.caption ?? "A photo of this spot will be added soon."}
                     </p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[color:var(--gos-muted)]">
                       {selectedPoi.photo?.alt}
@@ -824,7 +845,7 @@ export function PropertyMapEngine({
                       </button>
                     ) : (
                       <div className="rounded-full bg-[rgba(31,46,39,0.04)] px-4 py-3 text-sm text-[color:var(--gos-muted)]">
-                        No unlock action for this POI.
+                        This spot can&apos;t be unlocked remotely.
                       </div>
                     )}
 
@@ -848,17 +869,17 @@ export function PropertyMapEngine({
                   </p>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-[color:var(--gos-muted)]">
-                  Tap any gate, elevator, destination, or amenity to inspect its data-driven details.
+                  Tap any gate, elevator, destination, or amenity to see more about it.
                 </p>
                 <div className="mt-4 flex items-center gap-2 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-3 text-sm text-[color:var(--gos-muted)]">
                   <LockKeyhole className="h-4 w-4" />
-                  Unlock and navigation controls will connect in a future phase.
+                  Unlock and navigation controls are coming soon.
                 </div>
               </div>
             )}
           </aside>
         </div>
-      </section>
+      </Wrapper>
     </div>
   );
 }

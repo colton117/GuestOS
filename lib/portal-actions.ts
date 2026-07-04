@@ -9,14 +9,34 @@ import {
   findGuestByIdentifier,
   getGuestPortalDestination,
   getCurrentGuestId,
+  isValidGuestEmail,
+  isValidGuestPhone,
   normalizeGuestEmail,
   normalizeGuestPhone,
   PORTAL_GUEST_COOKIE,
   requireCurrentGuest,
+  signInGuest,
 } from "@/lib/portal";
+import { requireAdminSession } from "@/lib/admin-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { createGuestLoginCode, verifyGuestLoginCode } from "@/lib/guest-otp";
+import { sendGuestLoginCodeEmail } from "@/lib/email/resend";
 
 function parseBoolean(value: FormDataEntryValue | null) {
   return value === "on" || value === "true";
+}
+
+const MIN_VEHICLE_YEAR = 1900;
+
+function parseVehicleYear(value: FormDataEntryValue | null): number {
+  const parsed = Number(value);
+  const currentYear = new Date().getFullYear();
+
+  if (!Number.isFinite(parsed) || parsed < MIN_VEHICLE_YEAR || parsed > currentYear + 1) {
+    return currentYear;
+  }
+
+  return parsed;
 }
 
 async function syncVehicleDefaults(guestId: string, vehicleId: string) {
@@ -31,25 +51,30 @@ async function syncVehicleDefaults(guestId: string, vehicleId: string) {
   });
 }
 
-async function signInGuest(guestId: string) {
-  const cookieStore = await cookies();
-  cookieStore.set(PORTAL_GUEST_COOKIE, guestId, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-  });
-}
-
 /**
- * Looks up a guest by the email or phone they entered. If found, logs them
- * straight in. If not, sends them to the create-account step, prefilled with
- * whatever they typed.
+ * Looks up a guest by the email or phone they entered. If found, emails them
+ * a one-time sign-in code rather than signing them in outright — a plain
+ * identifier match proves nothing about who's actually typing it in, and
+ * this app can unlock physical doors, so we don't sign anyone in without
+ * proof they control the email on file. If not found, sends them to the
+ * create-account step, prefilled with whatever they typed.
  */
 export async function lookupGuestAction(formData: FormData) {
   const identifier = String(formData.get("identifier") ?? "").trim();
+  const remember = parseBoolean(formData.get("remember"));
 
   if (!identifier) {
     redirect("/login");
+  }
+
+  const allowed = await checkRateLimit("guest-lookup", 20, 60_000);
+
+  if (!allowed) {
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "Too many attempts. Please wait a minute and try again.",
+      )}`,
+    );
   }
 
   const guest = await findGuestByIdentifier(identifier);
@@ -58,9 +83,165 @@ export async function lookupGuestAction(formData: FormData) {
     redirect(`/login?identifier=${encodeURIComponent(identifier)}`);
   }
 
-  await signInGuest(guest.id);
+  const rememberParam = remember ? "&remember=1" : "";
+
+  try {
+    const code = await createGuestLoginCode(guest.id);
+    await sendGuestLoginCodeEmail(guest.email, code);
+  } catch (error) {
+    console.error("[GuestOS] Failed to send guest sign-in code.", error);
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "We couldn't send a sign-in code right now. Please try again in a moment.",
+      )}`,
+    );
+  }
+
+  redirect(`/login?otpPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+}
+
+/**
+ * Verifies the code sent by lookupGuestAction. Only after this succeeds do
+ * we actually establish a session — this is the step that proves the person
+ * signing in controls the guest's email, not just knows it.
+ */
+export async function verifyLoginCodeAction(formData: FormData) {
+  const guestId = String(formData.get("guestId") ?? "").trim();
+  const code = String(formData.get("code") ?? "").trim();
+  const remember = parseBoolean(formData.get("remember"));
+  const rememberParam = remember ? "&remember=1" : "";
+
+  if (!guestId) {
+    redirect("/login");
+  }
+
+  const allowed = await checkRateLimit("guest-otp-verify", 15, 60_000);
+
+  if (!allowed) {
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "Too many attempts. Please wait a minute and try again.",
+      )}`,
+    );
+  }
+
+  const result = await verifyGuestLoginCode(guestId, code);
+
+  if (result === "too_many_attempts") {
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "Too many incorrect attempts. Request a new code to try again.",
+      )}`,
+    );
+  }
+
+  if (result === "expired") {
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "That code expired. Request a new one.",
+      )}`,
+    );
+  }
+
+  if (result === "invalid") {
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "That code isn't right. Double check your email and try again.",
+      )}`,
+    );
+  }
+
+  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
+
+  if (!guest) {
+    redirect("/login");
+  }
+
+  if (!guest.smsOptIn) {
+    redirect(`/login?smsOptInPending=${encodeURIComponent(guest.id)}${rememberParam}`);
+  }
+
+  await signInGuest(guest.id, remember);
 
   const destination = await getGuestPortalDestination(guest.id);
+  redirect(destination);
+}
+
+/**
+ * Issues a fresh code for the same guest, e.g. if the first one expired or
+ * never arrived. Separately rate-limited and tighter than lookup/verify
+ * since this is the action most likely to be abused to spam someone's inbox.
+ */
+export async function resendLoginCodeAction(formData: FormData) {
+  const guestId = String(formData.get("guestId") ?? "").trim();
+  const remember = parseBoolean(formData.get("remember"));
+  const rememberParam = remember ? "&remember=1" : "";
+
+  if (!guestId) {
+    redirect("/login");
+  }
+
+  const allowed = await checkRateLimit("guest-otp-resend", 5, 60_000);
+
+  if (!allowed) {
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "Please wait a bit before requesting another code.",
+      )}`,
+    );
+  }
+
+  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
+
+  if (!guest) {
+    redirect("/login");
+  }
+
+  try {
+    const code = await createGuestLoginCode(guest.id);
+    await sendGuestLoginCodeEmail(guest.email, code);
+  } catch (error) {
+    console.error("[GuestOS] Failed to resend guest sign-in code.", error);
+    redirect(
+      `/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&error=${encodeURIComponent(
+        "We couldn't send a new code right now. Please try again in a moment.",
+      )}`,
+    );
+  }
+
+  redirect(`/login?otpPending=${encodeURIComponent(guestId)}${rememberParam}&sent=1`);
+}
+
+/**
+ * Completes the recurring SMS opt-in re-prompt shown to returning guests who
+ * haven't opted in yet. Unlike the signup checkbox, this one is optional —
+ * leaving it unchecked just means we ask again next time.
+ */
+export async function confirmSmsOptInAction(formData: FormData) {
+  const guestId = String(formData.get("guestId") ?? "").trim();
+  const remember = parseBoolean(formData.get("remember"));
+  const smsOptIn = parseBoolean(formData.get("smsConsent"));
+
+  if (!guestId) {
+    redirect("/login");
+  }
+
+  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
+
+  if (!guest) {
+    redirect("/login");
+  }
+
+  if (smsOptIn && !guest.smsOptIn) {
+    await prisma.guest.update({
+      where: { id: guestId },
+      data: { smsOptIn: true },
+    });
+  }
+
+  await signInGuest(guestId, remember);
+
+  const destination = await getGuestPortalDestination(guestId);
   redirect(destination);
 }
 
@@ -70,11 +251,42 @@ export async function createGuestAction(formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const remember = parseBoolean(formData.get("remember"));
+  const smsOptIn = Boolean(formData.get("smsConsent"));
 
   if (!firstName || !lastName || !email || !phone) {
     redirect(
       `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
         "Please fill in every field.",
+      )}`,
+    );
+  }
+
+  const normalizedEmail = normalizeGuestEmail(email);
+  const normalizedPhone = normalizeGuestPhone(phone);
+
+  if (!isValidGuestEmail(normalizedEmail)) {
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "Please enter a valid email address.",
+      )}`,
+    );
+  }
+
+  if (!isValidGuestPhone(normalizedPhone)) {
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "Please enter a valid phone number (at least 10 digits).",
+      )}`,
+    );
+  }
+
+  const allowed = await checkRateLimit("guest-create", 10, 60_000);
+
+  if (!allowed) {
+    redirect(
+      `/login?identifier=${encodeURIComponent(identifier)}&error=${encodeURIComponent(
+        "Too many attempts. Please wait a minute and try again.",
       )}`,
     );
   }
@@ -86,8 +298,9 @@ export async function createGuestAction(formData: FormData) {
       data: {
         firstName,
         lastName,
-        email: normalizeGuestEmail(email),
-        phone: normalizeGuestPhone(phone),
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        smsOptIn,
       },
     });
     guestId = guest.id;
@@ -105,8 +318,8 @@ export async function createGuestAction(formData: FormData) {
     throw error;
   }
 
-  await signInGuest(guestId);
-  redirect("/request-visit");
+  await signInGuest(guestId, remember);
+  redirect(`/login?passkeySetupPending=1&destination=${encodeURIComponent("/request-visit")}`);
 }
 
 export async function clearGuestAction() {
@@ -120,8 +333,12 @@ export async function updateProfileAction(formData: FormData) {
 
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
+  const email = normalizeGuestEmail(String(formData.get("email") ?? ""));
+  const phone = normalizeGuestPhone(String(formData.get("phone") ?? ""));
+
+  if (!firstName || !lastName || !isValidGuestEmail(email) || !isValidGuestPhone(phone)) {
+    redirect("/profile?error=invalid");
+  }
 
   await prisma.guest.update({
     where: { id: guest.id },
@@ -144,7 +361,7 @@ export async function addVehicleAction(formData: FormData) {
   const guest = await requireCurrentGuest();
   const make = String(formData.get("make") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
-  const year = Number(formData.get("year"));
+  const year = parseVehicleYear(formData.get("year"));
   const color = String(formData.get("color") ?? "").trim();
   const plate = String(formData.get("plate") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim();
@@ -176,7 +393,7 @@ export async function updateVehicleAction(formData: FormData) {
   const vehicleId = String(formData.get("vehicleId") ?? "");
   const make = String(formData.get("make") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
-  const year = Number(formData.get("year"));
+  const year = parseVehicleYear(formData.get("year"));
   const color = String(formData.get("color") ?? "").trim();
   const plate = String(formData.get("plate") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim();
@@ -291,6 +508,8 @@ export async function requestVisitAction(formData: FormData) {
 }
 
 export async function updateVisitRequestAction(formData: FormData) {
+  await requireAdminSession("/requests");
+
   const visitId = String(formData.get("visitId") ?? "");
   const vehicleId = String(formData.get("vehicleId") ?? "") || null;
   const arrivalDateTime = new Date(String(formData.get("arrivalDateTime") ?? ""));
@@ -326,9 +545,14 @@ export async function updateVisitRequestAction(formData: FormData) {
 }
 
 export async function approveVisitAction(formData: FormData) {
+  await requireAdminSession("/requests");
+
   const visitId = String(formData.get("visitId") ?? "");
-  await prisma.visit.update({
-    where: { id: visitId },
+
+  // Atomic status-guarded update: only transitions a visit that is still
+  // PENDING, so a double-click or a concurrent deny can't stomp each other.
+  await prisma.visit.updateMany({
+    where: { id: visitId, status: "PENDING" },
     data: { status: "APPROVED" },
   });
 
@@ -336,13 +560,17 @@ export async function approveVisitAction(formData: FormData) {
   revalidatePath("/current-visit");
   revalidatePath("/request-visit");
   revalidatePath("/dashboard");
+  revalidatePath("/host");
   revalidatePath("/visits");
 }
 
 export async function denyVisitAction(formData: FormData) {
+  await requireAdminSession("/requests");
+
   const visitId = String(formData.get("visitId") ?? "");
-  await prisma.visit.update({
-    where: { id: visitId },
+
+  await prisma.visit.updateMany({
+    where: { id: visitId, status: "PENDING" },
     data: { status: "DENIED" },
   });
 
@@ -350,18 +578,21 @@ export async function denyVisitAction(formData: FormData) {
   revalidatePath("/current-visit");
   revalidatePath("/request-visit");
   revalidatePath("/dashboard");
+  revalidatePath("/host");
   revalidatePath("/visits");
 }
 
 export async function cancelVisitRequestAction(formData: FormData) {
+  const guestId = await getCurrentGuestId();
   const visitId = String(formData.get("visitId") ?? "");
 
-  await prisma.visit.update({
-    where: { id: visitId },
-    data: { status: "DENIED" },
-  });
-
-  const guestId = await getCurrentGuestId();
+  if (guestId) {
+    // Ownership-guarded: a guest can only cancel their own visit request.
+    await prisma.visit.updateMany({
+      where: { id: visitId, guestId },
+      data: { status: "DENIED" },
+    });
+  }
 
   revalidatePath("/current-visit");
   revalidatePath("/request-visit");

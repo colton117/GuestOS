@@ -1,14 +1,16 @@
-import { GuestLogin } from "@/components/guest-login";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 type HomePageProps = {
-  searchParams?: Promise<{
-    identifier?: string;
-    error?: string;
-  }>;
+  searchParams?: Promise<Record<string, string | undefined>>;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const { identifier, error } = (await searchParams) ?? {};
+  const params = (await searchParams) ?? {};
+  const query = new URLSearchParams(
+    Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  ).toString();
 
-  return <GuestLogin identifier={identifier} error={error} />;
+  redirect(query ? `/login?${query}` : "/login");
 }

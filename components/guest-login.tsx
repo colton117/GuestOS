@@ -1,38 +1,83 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Sparkles, ShieldCheck, Building2 } from "lucide-react";
-import { createGuestAction, lookupGuestAction } from "@/lib/portal-actions";
+import {
+  confirmSmsOptInAction,
+  createGuestAction,
+  lookupGuestAction,
+  resendLoginCodeAction,
+  verifyLoginCodeAction,
+} from "@/lib/portal-actions";
 import { getGuestBranding } from "@/lib/branding";
 import { PublicFooter } from "@/components/public-footer";
+import { SmsConsentCheckbox } from "@/components/sms-consent-checkbox";
+import { PasskeyLoginButton } from "@/components/passkey-login-button";
+import { PasskeySetupPrompt } from "@/components/passkey-setup-prompt";
+
+function RememberMeCheckbox() {
+  return (
+    <label className="flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4 transition-transform duration-[180ms] hover:-translate-y-0.5">
+      <input
+        type="checkbox"
+        name="remember"
+        className="h-4 w-4 rounded border-[rgba(31,46,39,0.25)] text-[color:var(--gos-primary)]"
+      />
+      <span className="text-sm text-[color:var(--gos-text)]">
+        Remember me on this device for 90 days
+      </span>
+    </label>
+  );
+}
 
 export async function GuestLogin({
   identifier,
   error,
+  smsOptInPending,
+  remember,
+  passkeySetupPending,
+  destination,
+  otpPending,
+  sent,
 }: {
   identifier?: string;
   error?: string;
+  smsOptInPending?: string;
+  remember?: string;
+  passkeySetupPending?: string;
+  destination?: string;
+  otpPending?: string;
+  sent?: string;
 }) {
   const branding = await getGuestBranding();
   const isEmailIdentifier = identifier?.includes("@") ?? false;
   const showCreateForm = Boolean(identifier);
+  const showSmsOptInPrompt = Boolean(smsOptInPending);
+  const showPasskeySetupPrompt = Boolean(passkeySetupPending);
+  const showOtpPending = Boolean(otpPending);
+  const justSentCode = sent === "1";
+  const rememberDefaultChecked = remember === "1";
+  const safeDestination =
+    destination && destination.startsWith("/") && !destination.startsWith("//")
+      ? destination
+      : "/current-visit";
 
   return (
     <>
-      <main className="gos-shell flex min-h-screen items-center px-4 py-8 sm:px-6 lg:px-8">
+      <main className="gos-shell flex min-h-screen items-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="gos-card overflow-hidden">
-            <div className="relative min-h-[280px] overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
+          <div className="gos-card order-2 overflow-hidden lg:order-1">
+            <div className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-10 lg:min-h-[280px]">
               <div className="absolute inset-0 bg-[rgba(31,46,39,0.04)]" />
               <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[rgba(168,138,90,0.14)] blur-3xl" />
               <div className="relative flex h-full flex-col justify-between gap-6">
                 <div className="space-y-4">
                   <p className="gos-badge">GuestOS</p>
                   <div className="space-y-3">
-                    <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-6xl">
-                      Welcome to the guest experience.
+                    <h1 className="max-w-xl text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-4xl lg:text-6xl">
+                      Welcome to GuestOS.
                     </h1>
                     <p className="max-w-lg text-base leading-7 text-[color:var(--gos-muted)]">
-                      Elegant, calm arrival handling for residents, guests, and hosts.
+                      Everything you need to check in, hosted by the people who live here.
                     </p>
                   </div>
                 </div>
@@ -41,10 +86,10 @@ export async function GuestLogin({
                   <div className="gos-panel p-4">
                     <Sparkles className="h-5 w-5 text-[color:var(--gos-accent)]" />
                     <p className="mt-3 text-sm font-medium text-[color:var(--gos-primary)]">
-                      Concierge-first
+                      Easy to use
                     </p>
                     <p className="mt-1 text-sm text-[color:var(--gos-muted)]">
-                      Clear guidance from arrival to checkout.
+                      Clear steps from arrival to checkout.
                     </p>
                   </div>
                   <div className="gos-panel p-4">
@@ -53,16 +98,16 @@ export async function GuestLogin({
                       Private and secure
                     </p>
                     <p className="mt-1 text-sm text-[color:var(--gos-muted)]">
-                      Designed for a calm, trusted guest flow.
+                      Your information stays between you and your host.
                     </p>
                   </div>
                   <div className="gos-panel p-4">
                     <Building2 className="h-5 w-5 text-[color:var(--gos-warning)]" />
                     <p className="mt-3 text-sm font-medium text-[color:var(--gos-primary)]">
-                      Property-aware
+                      Works with your building
                     </p>
                     <p className="mt-1 text-sm text-[color:var(--gos-muted)]">
-                      GuestOS remains primary while property details stay secondary.
+                      We show property details when you need them, without getting in the way.
                     </p>
                   </div>
                 </div>
@@ -70,8 +115,8 @@ export async function GuestLogin({
             </div>
           </div>
 
-          <section className="gos-card gos-fade-in overflow-hidden">
-            <div className="space-y-6 p-6 sm:p-8">
+          <section className="gos-card gos-fade-in order-1 overflow-hidden lg:order-2">
+            <div className="space-y-6 p-5 sm:p-8">
               <div className="space-y-4">
                 {branding.logoSrc ? (
                   <div className="inline-flex rounded-[28px] border border-[rgba(31,46,39,0.08)] bg-white p-4 shadow-sm">
@@ -87,12 +132,26 @@ export async function GuestLogin({
                 <div className="space-y-2">
                   <p className="gos-badge">GuestOS Login</p>
                   <h2 className="text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
-                    {showCreateForm ? "Create your account" : "Welcome"}
+                    {showPasskeySetupPrompt
+                      ? "Faster sign-in next time?"
+                      : showSmsOptInPrompt
+                        ? "Stay in the loop"
+                        : showOtpPending
+                          ? "Check your email"
+                          : showCreateForm
+                            ? "Create your account"
+                            : "Welcome"}
                   </h2>
                   <p className="text-base leading-7 text-[color:var(--gos-muted)]">
-                    {showCreateForm
-                      ? "We couldn't find an account with that info. Fill in the rest to get set up."
-                      : "Enter your email or phone number to sign in or create an account."}
+                    {showPasskeySetupPrompt
+                      ? "Set up a passkey so you can sign in with Face ID, Touch ID, or Windows Hello instead of typing your info."
+                      : showSmsOptInPrompt
+                        ? "Get text updates about your visits and access. You can always change your mind later."
+                        : showOtpPending
+                          ? "We emailed you a 6-digit code. Enter it below to sign in."
+                          : showCreateForm
+                            ? "We couldn't find an account with that info. Fill in the rest to get set up."
+                            : "Enter your email or phone number to sign in or create an account."}
                   </p>
                 </div>
               </div>
@@ -103,7 +162,72 @@ export async function GuestLogin({
                 </div>
               ) : null}
 
-              {showCreateForm ? (
+              {showPasskeySetupPrompt ? (
+                <PasskeySetupPrompt destination={safeDestination} />
+              ) : showOtpPending ? (
+                <div className="space-y-4">
+                  {justSentCode ? (
+                    <p className="rounded-lg border border-[rgba(62,107,78,0.3)] bg-[rgba(62,107,78,0.12)] px-4 py-3 text-sm text-[color:var(--gos-success)]">
+                      New code sent.
+                    </p>
+                  ) : null}
+                  <form action={verifyLoginCodeAction} className="space-y-4">
+                    <input type="hidden" name="guestId" value={otpPending} />
+                    {rememberDefaultChecked ? (
+                      <input type="hidden" name="remember" value="on" />
+                    ) : null}
+                    <label className="gos-label space-y-2">
+                      <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                        6-digit code
+                      </span>
+                      <input
+                        name="code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        required
+                        autoFocus
+                        placeholder="123456"
+                        className="gos-input text-center text-lg tracking-[0.3em]"
+                      />
+                    </label>
+                    <button type="submit" className="gos-button-primary w-full text-sm">
+                      Continue
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </form>
+                  <form action={resendLoginCodeAction}>
+                    <input type="hidden" name="guestId" value={otpPending} />
+                    {rememberDefaultChecked ? (
+                      <input type="hidden" name="remember" value="on" />
+                    ) : null}
+                    <button
+                      type="submit"
+                      className="block w-full text-center text-sm text-[color:var(--gos-muted)] underline underline-offset-4"
+                    >
+                      Send a new code
+                    </button>
+                  </form>
+                  <Link
+                    href="/login"
+                    className="block text-center text-sm text-[color:var(--gos-muted)] underline underline-offset-4"
+                  >
+                    Use a different email or phone
+                  </Link>
+                </div>
+              ) : showSmsOptInPrompt ? (
+                <form action={confirmSmsOptInAction} className="space-y-4">
+                  <input type="hidden" name="guestId" value={smsOptInPending} />
+                  {rememberDefaultChecked ? (
+                    <input type="hidden" name="remember" value="on" />
+                  ) : null}
+                  <SmsConsentCheckbox required={false} />
+                  <button type="submit" className="gos-button-primary w-full text-sm">
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </form>
+              ) : showCreateForm ? (
                 <form action={createGuestAction} className="space-y-4">
                   <input type="hidden" name="identifier" value={identifier} />
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -150,6 +274,9 @@ export async function GuestLogin({
                     />
                   </label>
 
+                  <SmsConsentCheckbox />
+                  <RememberMeCheckbox />
+
                   <button type="submit" className="gos-button-primary w-full text-sm">
                     Create Account
                     <ArrowRight className="h-4 w-4" />
@@ -162,30 +289,44 @@ export async function GuestLogin({
                   </Link>
                 </form>
               ) : (
-                <form action={lookupGuestAction} className="space-y-4">
-                  <label className="gos-label space-y-2">
-                    <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                      Email or Phone Number
-                    </span>
-                    <input
-                      name="identifier"
-                      required
-                      autoFocus
-                      placeholder="you@example.com or (555) 123-4567"
-                      className="gos-input text-sm"
-                    />
-                  </label>
+                <div className="space-y-4">
+                  <PasskeyLoginButton />
 
-                  <button type="submit" className="gos-button-primary w-full text-sm">
-                    Continue
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </form>
+                  <div className="flex items-center gap-3">
+                    <span className="h-px flex-1 bg-[rgba(31,46,39,0.08)]" />
+                    <span className="text-xs uppercase tracking-[0.14em] text-[color:var(--gos-muted)]">
+                      or
+                    </span>
+                    <span className="h-px flex-1 bg-[rgba(31,46,39,0.08)]" />
+                  </div>
+
+                  <form action={lookupGuestAction} className="space-y-4">
+                    <label className="gos-label space-y-2">
+                      <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                        Email or Phone Number
+                      </span>
+                      <input
+                        name="identifier"
+                        required
+                        autoFocus
+                        placeholder="you@example.com or (555) 123-4567"
+                        className="gos-input text-sm"
+                      />
+                    </label>
+
+                    <RememberMeCheckbox />
+
+                    <button type="submit" className="gos-button-primary w-full text-sm">
+                      Continue
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </form>
+                </div>
               )}
 
               <div className="flex items-center justify-center gap-4 border-t border-[rgba(31,46,39,0.08)] pt-4 text-xs">
                 <Link
-                  href="/requests"
+                  href="/admin-login"
                   className="font-medium text-[color:var(--gos-muted)] underline underline-offset-4 hover:text-[color:var(--gos-primary)]"
                 >
                   Host Dashboard
@@ -194,7 +335,7 @@ export async function GuestLogin({
                   &middot;
                 </span>
                 <Link
-                  href="/settings"
+                  href="/superadmin-login"
                   className="font-medium text-[color:var(--gos-muted)] underline underline-offset-4 hover:text-[color:var(--gos-primary)]"
                 >
                   Admin Dashboard

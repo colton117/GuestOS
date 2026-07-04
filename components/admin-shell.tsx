@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { LogOut } from "lucide-react";
 import { AdminNav } from "@/components/admin-nav";
+import { adminLogoutAction } from "@/lib/admin-auth-actions";
 
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
@@ -11,10 +13,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
               GuestOS
             </p>
             <h1 className="mt-1 text-xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
-              Resident Dashboard
+              Host Dashboard
             </h1>
           </div>
-          <AdminNav />
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminNav />
+            <form action={adminLogoutAction}>
+              <button type="submit" className="gos-button-ghost text-sm">
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">

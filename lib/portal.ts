@@ -3,6 +3,25 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 export const PORTAL_GUEST_COOKIE = "guestos_portal_guest_id";
+const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
+
+/**
+ * Not a Server Action — this file has no "use server" directive. Keeping
+ * this here (rather than in lib/portal-actions.ts) matters: every function
+ * exported from a "use server" module becomes a public, directly-callable
+ * endpoint, and this function sets the session cookie for whatever guestId
+ * it's given with no ownership check. Exporting it from an actions file
+ * would let anyone sign in as any guest by ID.
+ */
+export async function signInGuest(guestId: string, remember: boolean = false) {
+  const cookieStore = await cookies();
+  cookieStore.set(PORTAL_GUEST_COOKIE, guestId, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    ...(remember ? { maxAge: REMEMBER_ME_MAX_AGE } : {}),
+  });
+}
 
 type PortalVisit = {
   id: string;
@@ -169,6 +188,21 @@ export function normalizeGuestEmail(value: string) {
 
 export function normalizeGuestPhone(value: string) {
   return value.replace(/\D/g, "");
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PHONE_DIGITS = 10;
+const MAX_PHONE_DIGITS = 15;
+
+export function isValidGuestEmail(email: string): boolean {
+  return EMAIL_PATTERN.test(email);
+}
+
+export function isValidGuestPhone(normalizedPhone: string): boolean {
+  return (
+    normalizedPhone.length >= MIN_PHONE_DIGITS &&
+    normalizedPhone.length <= MAX_PHONE_DIGITS
+  );
 }
 
 /**

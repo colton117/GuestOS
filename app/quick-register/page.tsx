@@ -2,19 +2,27 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { findQuickRegisterMatch } from "@/lib/admin-data";
 import { SectionCard } from "@/components/section-card";
+import { requireAdminSession } from "@/lib/admin-auth";
+import {
+  adminCreateGuestAction,
+  adminCreateVisitAction,
+} from "@/lib/admin-visit-actions";
 
 export const dynamic = "force-dynamic";
 
 type QuickRegisterPageProps = {
   searchParams?: Promise<{
     q?: string;
+    error?: string;
   }>;
 };
 
 export default async function QuickRegisterPage({
   searchParams,
 }: QuickRegisterPageProps) {
-  const { q: query = "" } = (await searchParams) ?? {};
+  await requireAdminSession("/quick-register");
+
+  const { q: query = "", error } = (await searchParams) ?? {};
   const guest = await findQuickRegisterMatch(query);
   const defaultVehicle =
     guest?.vehicles.find((vehicle) => vehicle.isDefault) ?? guest?.vehicles[0];
@@ -23,29 +31,35 @@ export default async function QuickRegisterPage({
     <AdminShell>
       <div className="space-y-6">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+          <p className="gos-section-title text-[0.72rem] font-semibold">
             Quick Register
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
             Search and register a visit
           </h1>
         </div>
 
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
         <SectionCard title="Lookup">
           <form className="grid gap-4 md:grid-cols-[1fr_auto]">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
+              <label className="mb-2 block text-sm font-medium text-[color:var(--gos-primary)]">
                 Search by name, email, phone, or license plate
               </label>
               <input
                 name="q"
                 defaultValue={query}
                 placeholder="Type a guest or vehicle identifier"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none ring-0 placeholder:text-slate-400 focus:border-slate-950"
+                className="gos-input text-sm"
               />
             </div>
             <div className="flex items-end">
-              <button className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white">
+              <button type="submit" className="gos-button-primary w-full text-sm md:w-auto">
                 Search
               </button>
             </div>
@@ -57,22 +71,26 @@ export default async function QuickRegisterPage({
             <SectionCard title="Matched Guest">
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-slate-500">Guest</p>
-                  <p className="font-medium text-slate-950">
+                  <p className="text-[color:var(--gos-muted)]">Guest</p>
+                  <p className="font-medium text-[color:var(--gos-primary)]">
                     {guest.firstName} {guest.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">Email</p>
-                  <p className="font-medium text-slate-950">{guest.email}</p>
+                  <p className="text-[color:var(--gos-muted)]">Email</p>
+                  <p className="font-medium text-[color:var(--gos-primary)]">
+                    {guest.email}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">Phone</p>
-                  <p className="font-medium text-slate-950">{guest.phone}</p>
+                  <p className="text-[color:var(--gos-muted)]">Phone</p>
+                  <p className="font-medium text-[color:var(--gos-primary)]">
+                    {guest.phone || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">Default Vehicle</p>
-                  <p className="font-medium text-slate-950">
+                  <p className="text-[color:var(--gos-muted)]">Default Vehicle</p>
+                  <p className="font-medium text-[color:var(--gos-primary)]">
                     {defaultVehicle
                       ? `${defaultVehicle.year} ${defaultVehicle.make} ${defaultVehicle.model} ${defaultVehicle.plate}`
                       : "No vehicle on file"}
@@ -82,64 +100,142 @@ export default async function QuickRegisterPage({
             </SectionCard>
 
             <SectionCard title="Visit Details">
-              <div className="space-y-4 text-sm text-slate-700">
+              <form
+                action={adminCreateVisitAction}
+                className="space-y-4 text-sm text-[color:var(--gos-text)]"
+              >
+                <input type="hidden" name="guestId" value={guest.id} />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="space-y-2">
-                    <span className="block font-medium text-slate-700">
-                      Arrival Date & Time
+                  <label className="gos-label space-y-2">
+                    <span className="block font-medium text-[color:var(--gos-primary)]">
+                      Arrival Date &amp; Time
                     </span>
                     <input
+                      name="arrivalDateTime"
                       type="datetime-local"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                      required
+                      className="gos-input text-sm"
                     />
                   </label>
-                  <label className="space-y-2">
-                    <span className="block font-medium text-slate-700">
-                      Departure Date & Time
+                  <label className="gos-label space-y-2">
+                    <span className="block font-medium text-[color:var(--gos-primary)]">
+                      Departure Date &amp; Time
                     </span>
                     <input
+                      name="departureDateTime"
                       type="datetime-local"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                      className="gos-input text-sm"
                     />
                   </label>
                 </div>
 
+                {guest.vehicles.length > 0 ? (
+                  <label className="gos-label space-y-2">
+                    <span className="block font-medium text-[color:var(--gos-primary)]">
+                      Vehicle
+                    </span>
+                    <select
+                      name="vehicleId"
+                      defaultValue={defaultVehicle?.id ?? ""}
+                      className="gos-input text-sm"
+                    >
+                      <option value="">No vehicle</option>
+                      {guest.vehicles.map((vehicle) => (
+                        <option key={vehicle.id} value={vehicle.id}>
+                          {vehicle.year} {vehicle.make} {vehicle.model}{" "}
+                          {vehicle.plate}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
-                    <input type="checkbox" defaultChecked />
+                  <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                    <input type="checkbox" name="parkingRequired" defaultChecked />
                     <span>Parking</span>
                   </label>
-                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
-                    <input type="checkbox" defaultChecked />
+                  <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                    <input
+                      type="checkbox"
+                      name="buildingAccessRequired"
+                      defaultChecked
+                    />
                     <span>Building Access</span>
                   </label>
-                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
-                    <input type="checkbox" defaultChecked />
+                  <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                    <input
+                      type="checkbox"
+                      name="apartmentAccessRequired"
+                      defaultChecked
+                    />
                     <span>Apartment Access</span>
                   </label>
                 </div>
 
-                <button className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white">
+                <button type="submit" className="gos-button-primary w-full text-sm">
                   Register Visit
                 </button>
-              </div>
+              </form>
             </SectionCard>
           </div>
-        ) : (
+        ) : query ? (
           <SectionCard title="No Match">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-600">
-                No guest matched the current search.
+            <div className="space-y-6">
+              <p className="text-sm text-[color:var(--gos-muted)]">
+                No guest matched &ldquo;{query}&rdquo;. Create a new guest
+                below to register their visit.
               </p>
-              <Link
-                href="/guests"
-                className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white"
+              <form
+                action={adminCreateGuestAction}
+                className="grid gap-4 sm:grid-cols-2"
               >
-                Create New Guest
-              </Link>
+                <label className="gos-label space-y-2">
+                  <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                    First Name
+                  </span>
+                  <input name="firstName" required className="gos-input text-sm" />
+                </label>
+                <label className="gos-label space-y-2">
+                  <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                    Last Name
+                  </span>
+                  <input name="lastName" required className="gos-input text-sm" />
+                </label>
+                <label className="gos-label space-y-2">
+                  <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                    Email
+                  </span>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    className="gos-input text-sm"
+                  />
+                </label>
+                <label className="gos-label space-y-2">
+                  <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                    Phone
+                  </span>
+                  <input name="phone" type="tel" required className="gos-input text-sm" />
+                </label>
+                <div className="sm:col-span-2">
+                  <button type="submit" className="gos-button-primary w-full text-sm sm:w-auto">
+                    Create Guest
+                  </button>
+                </div>
+              </form>
+              <div className="border-t border-[rgba(31,46,39,0.08)] pt-4 text-right">
+                <Link
+                  href="/guests"
+                  className="text-sm text-[color:var(--gos-muted)] underline underline-offset-4"
+                >
+                  Or browse the guest directory
+                </Link>
+              </div>
             </div>
           </SectionCard>
-        )}
+        ) : null}
       </div>
     </AdminShell>
   );

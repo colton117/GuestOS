@@ -11,13 +11,13 @@ const INITIAL_DOORS = [
     friendlyName: "Retail Garage Lobby / Elevator",
     homeAssistantAction: "door.retail_garage_lobby_elevator",
     enabled: true,
-    doorType: "SMARTRENT" as const,
+    doorType: "BUTTERFLY" as const,
   },
   {
     friendlyName: "Package Locker Lobby Door",
     homeAssistantAction: "door.package_locker_lobby_door",
     enabled: true,
-    doorType: "MANUAL_CODE" as const,
+    doorType: "BUTTERFLY" as const,
   },
   {
     friendlyName: "Knight St Pedestrian Gate",
@@ -29,7 +29,7 @@ const INITIAL_DOORS = [
     friendlyName: "Loading Dock",
     homeAssistantAction: "door.loading_dock",
     enabled: true,
-    doorType: "SMARTRENT" as const,
+    doorType: "BUTTERFLY" as const,
   },
   {
     friendlyName: "Garage Pedestrian Gate",
@@ -41,7 +41,7 @@ const INITIAL_DOORS = [
     friendlyName: "Pool",
     homeAssistantAction: "door.pool",
     enabled: true,
-    doorType: "MANUAL_CODE" as const,
+    doorType: "BUTTERFLY" as const,
   },
   {
     friendlyName: "Apartment Door 4160",
@@ -53,7 +53,7 @@ const INITIAL_DOORS = [
     friendlyName: "Stairwell",
     homeAssistantAction: "door.stairwell",
     enabled: true,
-    doorType: "MANUAL_CODE" as const,
+    doorType: "BUTTERFLY" as const,
   },
 ];
 

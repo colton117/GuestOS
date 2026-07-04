@@ -17,9 +17,11 @@ import { CurrentVisitCountdown } from "@/components/current-visit-countdown";
 import { CurrentVisitAccessActions } from "@/components/current-visit-access-actions";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
+import { PropertyMapEngine } from "@/components/property-map-engine";
 import { cancelVisitRequestAction } from "@/lib/portal-actions";
 import { getCurrentGuest, getGuestVisitState } from "@/lib/portal";
 import { getGuestBranding } from "@/lib/branding";
+import { propertyMapFloors } from "@/lib/property-map";
 
 export const dynamic = "force-dynamic";
 
@@ -99,7 +101,7 @@ export default async function CurrentVisitPage() {
               <div className="absolute left-8 top-8 h-36 w-36 rounded-full bg-[rgba(168,138,90,0.16)] blur-3xl" />
               <div className="relative space-y-7">
                 <div className="space-y-4">
-                  <p className="gos-badge gos-scale-in">GuestOS Concierge</p>
+                  <p className="gos-badge gos-scale-in">Your stay</p>
                   <div className="space-y-3">
                     <p className="text-sm font-medium uppercase tracking-[0.22em] text-[color:var(--gos-muted)]">
                       Welcome back, {guest.firstName}
@@ -109,10 +111,10 @@ export default async function CurrentVisitPage() {
                     </h1>
                     <p className="max-w-2xl text-base leading-7 text-[color:var(--gos-muted)] sm:text-lg">
                       {state.kind === "pending_visit_request"
-                        ? "Your request is under review. We will keep everything calm and guided while you wait for approval."
+                        ? "Your host needs to approve this before your visit is confirmed. We'll let you know as soon as they do."
                         : state.kind === "upcoming_approved_visit"
-                          ? "Your arrival is confirmed. GuestOS is preparing access details and arrival timing."
-                          : "Your stay is ready. Use the concierge actions below for a seamless arrival."}
+                          ? "Your arrival is confirmed. We're getting your access details and arrival timing ready."
+                          : "You're all set. Use the actions below when you arrive."}
                     </p>
                   </div>
                 </div>
@@ -154,7 +156,7 @@ export default async function CurrentVisitPage() {
                       Current stay
                     </p>
                     <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
-                      Concierge summary
+                      Visit details
                     </h2>
                   </div>
                   <span
@@ -183,7 +185,7 @@ export default async function CurrentVisitPage() {
                         {propertyName}
                       </p>
                       <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
-                        The apartment brand stays subtle so GuestOS remains primary.
+                        Property details show up here too, but GuestOS is what you&apos;ll use.
                       </p>
                     </div>
                   </div>
@@ -196,7 +198,7 @@ export default async function CurrentVisitPage() {
                       {propertyName}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-[color:var(--gos-muted)]">
-                      Property details will appear here once provided by the host.
+                      Once your host adds property details, they&apos;ll show up here.
                     </p>
                   </div>
                 )}
@@ -205,7 +207,7 @@ export default async function CurrentVisitPage() {
                   <div className="flex items-center gap-3">
                     <Sparkles className="h-5 w-5 text-[color:var(--gos-accent)]" />
                     <p className="text-sm font-medium text-[color:var(--gos-primary)]">
-                      Concierge summary
+                      Summary
                     </p>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[color:var(--gos-muted)]">
@@ -213,7 +215,7 @@ export default async function CurrentVisitPage() {
                       ? "Request submitted. The host has been notified."
                       : state.kind === "upcoming_approved_visit"
                         ? "Arrival is on the calendar and access instructions are ready below."
-                        : "All guest services are ready for your stay."}
+                        : "Everything you need for your stay is ready."}
                   </p>
                 </div>
 
@@ -260,7 +262,7 @@ export default async function CurrentVisitPage() {
                     <div className="flex items-center gap-3">
                       <ShieldCheck className="h-5 w-5 text-[color:var(--gos-success)]" />
                       <p className="text-sm font-semibold text-[color:var(--gos-primary)]">
-                        Host notification message
+                        Message to your host
                       </p>
                     </div>
                     <p className="mt-3 text-sm leading-6 text-[color:var(--gos-muted)]">
@@ -318,7 +320,7 @@ export default async function CurrentVisitPage() {
                   <InfoTile
                     icon={UserRound}
                     label="Host"
-                    value="Host contact details will appear here."
+                    value="Host contact details will show up here."
                   />
                 </div>
               </div>
@@ -343,7 +345,7 @@ export default async function CurrentVisitPage() {
                 <div className="space-y-4">
                   <div className="gos-panel p-5">
                     <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
-                      The uploaded apartment branding remains subtle here so GuestOS stays primary.
+                      Your host&apos;s branding shows up here, but GuestOS stays the main way you get around.
                     </p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -363,7 +365,7 @@ export default async function CurrentVisitPage() {
                 <InfoTile
                   icon={MapPinned}
                   label="Maps & Directions"
-                  value="Concierge directions will be displayed here."
+                  value="Directions will show up here."
                 />
                 <InfoTile
                   icon={ShieldCheck}
@@ -374,9 +376,19 @@ export default async function CurrentVisitPage() {
                 <InfoTile
                   icon={Sparkles}
                   label="Available Amenities"
-                  value="Amenity highlights will be shown here."
+                  value="Amenities will show up here."
                 />
               </div>
+            </SectionCard>
+
+            <SectionCard title="Property Map">
+              <PropertyMapEngine
+                floors={propertyMapFloors}
+                initialFloorId="garage-level-1"
+                guestName={guestName}
+                propertyName={propertyName}
+                variant="embedded"
+              />
             </SectionCard>
 
             <SectionCard title="Access">

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession, requireSuperadminSession } from "@/lib/admin-auth";
+import { pingHomeAssistant } from "@/lib/homeassistant/client";
 
 function parseBoolean(value: FormDataEntryValue | null) {
   return value === "on" || value === "true";
@@ -32,6 +34,8 @@ function parseFileData(value: FormDataEntryValue | null) {
 }
 
 export async function saveHostAction(formData: FormData) {
+  await requireSuperadminSession("/admin/hosts");
+
   const hostId = parseOptionalString(formData.get("hostId"));
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
@@ -48,10 +52,13 @@ export async function saveHostAction(formData: FormData) {
     });
   }
 
+  revalidatePath("/admin/hosts");
   revalidatePath("/settings");
 }
 
 export async function deleteHostAction(formData: FormData) {
+  await requireSuperadminSession("/admin/hosts");
+
   const hostId = String(formData.get("hostId") ?? "");
 
   if (!hostId) {
@@ -62,10 +69,13 @@ export async function deleteHostAction(formData: FormData) {
     where: { id: hostId },
   });
 
+  revalidatePath("/admin/hosts");
   revalidatePath("/settings");
 }
 
 export async function saveParkingAction(formData: FormData) {
+  await requireAdminSession("/settings");
+
   await prisma.parkingSettings.upsert({
     where: { id: 1 },
     create: {
@@ -75,7 +85,7 @@ export async function saveParkingAction(formData: FormData) {
       ),
       parkingEnabled: parseBoolean(formData.get("parkingEnabled")),
       maximumParkingDuration:
-        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 24,
+        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
     },
     update: {
       currentQuarterlyPromoCode: parseOptionalString(
@@ -83,7 +93,7 @@ export async function saveParkingAction(formData: FormData) {
       ),
       parkingEnabled: parseBoolean(formData.get("parkingEnabled")),
       maximumParkingDuration:
-        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 24,
+        parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
     },
   });
 
@@ -91,6 +101,8 @@ export async function saveParkingAction(formData: FormData) {
 }
 
 export async function saveHomeAssistantAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
   await prisma.homeAssistantSettings.upsert({
     where: { id: 1 },
     create: {
@@ -108,14 +120,32 @@ export async function saveHomeAssistantAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/settings");
+  revalidatePath("/admin/property");
 }
 
 export async function testHomeAssistantAction() {
-  redirect("/settings?haTest=local-success");
+  await requireSuperadminSession("/admin/property");
+
+  let failureMessage: string | null = null;
+
+  try {
+    await pingHomeAssistant();
+  } catch (error) {
+    failureMessage = error instanceof Error ? error.message : "Unknown error.";
+  }
+
+  if (failureMessage) {
+    redirect(
+      `/admin/property?haTest=failed&haTestMessage=${encodeURIComponent(failureMessage)}`,
+    );
+  }
+
+  redirect("/admin/property?haTest=success");
 }
 
 export async function saveNotificationAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
   await prisma.notificationSettings.upsert({
     where: { id: 1 },
     create: {
@@ -135,10 +165,12 @@ export async function saveNotificationAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/settings");
+  revalidatePath("/admin/property");
 }
 
 export async function saveBrandingAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
   const logoFile = parseFileData(formData.get("logoUpload"));
   const logoData = logoFile ? Buffer.from(await logoFile.arrayBuffer()) : null;
   const logoMimeType = logoFile?.type || null;
@@ -163,17 +195,29 @@ export async function saveBrandingAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/settings");
+  revalidatePath("/admin/property");
+}
+
+const VALID_DOOR_TYPES = ["BUTTERFLY", "SMARTRENT", "MANUAL_CODE"] as const;
+type DoorTypeValue = (typeof VALID_DOOR_TYPES)[number];
+
+function parseDoorType(value: FormDataEntryValue | null): DoorTypeValue {
+  const text = String(value ?? "");
+  return (VALID_DOOR_TYPES as readonly string[]).includes(text)
+    ? (text as DoorTypeValue)
+    : "MANUAL_CODE";
 }
 
 export async function saveDoorAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
   const doorId = parseOptionalString(formData.get("doorId"));
   const friendlyName = String(formData.get("friendlyName") ?? "").trim();
   const homeAssistantAction = String(
     formData.get("homeAssistantAction") ?? "",
   ).trim();
   const enabled = parseBoolean(formData.get("enabled"));
-  const doorType = String(formData.get("doorType") ?? "MANUAL_CODE");
+  const doorType = parseDoorType(formData.get("doorType"));
 
   if (doorId) {
     await prisma.door.update({
@@ -182,7 +226,7 @@ export async function saveDoorAction(formData: FormData) {
         friendlyName,
         homeAssistantAction,
         enabled,
-        doorType: doorType as never,
+        doorType,
       },
     });
   } else {
@@ -191,15 +235,17 @@ export async function saveDoorAction(formData: FormData) {
         friendlyName,
         homeAssistantAction,
         enabled,
-        doorType: doorType as never,
+        doorType,
       },
     });
   }
 
-  revalidatePath("/settings");
+  revalidatePath("/admin/property");
 }
 
 export async function deleteDoorAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
   const doorId = String(formData.get("doorId") ?? "");
 
   if (!doorId) {
@@ -210,5 +256,5 @@ export async function deleteDoorAction(formData: FormData) {
     where: { id: doorId },
   });
 
-  revalidatePath("/settings");
+  revalidatePath("/admin/property");
 }

@@ -19,6 +19,21 @@ model Guest {
   vehicles    Vehicle[]
   visits      Visit[]
   credentials GuestCredential[]
+  loginCodes  GuestLoginCode[]
+}
+
+model GuestLoginCode {
+  id         String    @id @default(cuid())
+  guestId    String
+  codeHash   String
+  salt       String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  guest      Guest     @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
 }
 
 model GuestCredential {

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { SectionCard } from "@/components/section-card";
+import { SubmitButton } from "@/components/submit-button";
 import { getPendingRequests } from "@/lib/admin-data";
 import { updateVisitRequestAction } from "@/lib/portal-actions";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,8 @@ type RequestEditPageProps = {
 };
 
 export default async function RequestEditPage({ params }: RequestEditPageProps) {
+  await requireAdminSession("/requests");
+
   const { visitId } = await params;
   const requests = await getPendingRequests();
   const request = requests.find((entry) => entry.id === visitId);
@@ -25,10 +29,10 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
     <AdminShell>
       <div className="space-y-6">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+          <p className="gos-section-title text-[0.72rem] font-semibold">
             Requests
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
             Edit pending request
           </h1>
         </div>
@@ -36,20 +40,20 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
         <SectionCard title="Request Details">
           <form action={updateVisitRequestAction} className="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="visitId" value={request.id} />
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">
-                Arrival Date & Time
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Arrival Date &amp; Time
               </span>
               <input
                 name="arrivalDateTime"
                 type="datetime-local"
                 defaultValue={request.arrivalDateTime.toISOString().slice(0, 16)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                className="gos-input text-sm"
               />
             </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">
-                Departure Date & Time
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Departure Date &amp; Time
               </span>
               <input
                 name="departureDateTime"
@@ -59,17 +63,17 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
                     ? request.departureDateTime.toISOString().slice(0, 16)
                     : ""
                 }
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                className="gos-input text-sm"
               />
             </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
                 Vehicle
               </span>
               <select
                 name="vehicleId"
                 defaultValue={request.vehicleId ?? ""}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                className="gos-input text-sm"
               >
                 <option value="">No vehicle selected</option>
                 {request.guest.vehicles.map((vehicle) => (
@@ -80,7 +84,7 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
               </select>
             </label>
             <div className="grid gap-3 md:col-span-2 md:grid-cols-3">
-              <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
                 <input
                   type="checkbox"
                   name="parkingRequired"
@@ -88,7 +92,7 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
                 />
                 <span>Parking Required</span>
               </label>
-              <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
                 <input
                   type="checkbox"
                   name="buildingAccessRequired"
@@ -96,7 +100,7 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
                 />
                 <span>Building Access Required</span>
               </label>
-              <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
                 <input
                   type="checkbox"
                   name="apartmentAccessRequired"
@@ -105,21 +109,24 @@ export default async function RequestEditPage({ params }: RequestEditPageProps) 
                 <span>Apartment Access Required</span>
               </label>
             </div>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">
+            <label className="gos-label space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
                 Request Notes
               </span>
               <textarea
                 name="requestNotes"
                 rows={4}
                 defaultValue={request.requestNotes ?? ""}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none focus:border-slate-950"
+                className="gos-input text-sm"
               />
             </label>
             <div className="md:col-span-2">
-              <button className="rounded-lg border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-medium text-white">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
                 Save Request
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </SectionCard>
