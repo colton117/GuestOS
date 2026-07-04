@@ -1,21 +1,18 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
-  Building2,
   CarFront,
-  ChevronRight,
   Home,
-  KeyRound,
   MapPinned,
   Sparkles,
   Wifi,
   BedDouble,
   ShieldCheck,
-  DoorOpen,
   FileText,
   UserRound,
 } from "lucide-react";
 import { CurrentVisitCountdown } from "@/components/current-visit-countdown";
+import { CurrentVisitAccessActions } from "@/components/current-visit-access-actions";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { cancelVisitRequestAction } from "@/lib/portal-actions";
@@ -70,46 +67,6 @@ function getStatusLabel(kind: string) {
     default:
       return "Guest Stay";
   }
-}
-
-function conciergeCard({
-  icon: Icon,
-  title,
-  description,
-  tone = "default",
-}: {
-  icon: typeof Building2;
-  title: string;
-  description: string;
-  tone?: "default" | "accent" | "success";
-}) {
-  const toneClasses = {
-    default: "text-[color:var(--gos-primary)]",
-    accent: "text-[color:var(--gos-accent)]",
-    success: "text-[color:var(--gos-success)]",
-  };
-
-  return (
-    <button
-      type="button"
-      disabled
-      aria-disabled="true"
-      className="gos-panel flex w-full items-center gap-4 p-5 text-left transition-transform duration-[180ms] hover:-translate-y-0.5 disabled:cursor-default disabled:opacity-100"
-    >
-      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[26px] bg-[rgba(31,46,39,0.06)]">
-        <Icon className={`h-6 w-6 ${toneClasses[tone]}`} />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-base font-semibold text-[color:var(--gos-primary)]">
-          {title}
-        </span>
-        <span className="mt-1 block text-sm leading-6 text-[color:var(--gos-muted)]">
-          {description}
-        </span>
-      </span>
-      <ChevronRight className="ml-auto h-5 w-5 text-[color:var(--gos-muted)]" />
-    </button>
-  );
 }
 
 export default async function CurrentVisitPage() {
@@ -402,31 +359,7 @@ export default async function CurrentVisitPage() {
             </SectionCard>
 
             <SectionCard title="Access">
-              <div className="grid gap-4">
-                {conciergeCard({
-                  icon: KeyRound,
-                  title: "Vehicle Gate",
-                  description: visit.parkingRequired
-                    ? "Parking is part of your stay and the gate card is ready."
-                    : "Vehicle access is not required for this visit.",
-                  tone: "accent",
-                })}
-                {conciergeCard({
-                  icon: Building2,
-                  title: "Building Entry",
-                  description: visit.buildingAccessRequired
-                    ? "Main building access is required for your visit."
-                    : "Building access is not required for this visit.",
-                })}
-                {conciergeCard({
-                  icon: DoorOpen,
-                  title: "Apartment Door",
-                  description: visit.apartmentAccessRequired
-                    ? "Apartment entry is included in your access plan."
-                    : "Apartment access is not required for this visit.",
-                  tone: "success",
-                })}
-              </div>
+              <CurrentVisitAccessActions />
             </SectionCard>
           </div>
         ) : null}
