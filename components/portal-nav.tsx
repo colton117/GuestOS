@@ -1,15 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { clearGuestAction } from "@/lib/portal-actions";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/profile", label: "Profile" },
+  { href: "/current-visit", label: "Current Visit" },
   { href: "/vehicles", label: "Vehicles" },
-  { href: "/visits", label: "Visits" },
-  { href: "/request-visit", label: "Request Visit" },
+  { href: "/profile", label: "Profile" },
+  { href: "/visits", label: "History" },
 ];
 
 export function PortalNav({ guestName }: { guestName?: string }) {
+  const pathname = usePathname();
+
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -46,12 +54,20 @@ export function PortalNav({ guestName }: { guestName?: string }) {
           </div>
         </div>
 
-        <nav className="flex flex-wrap gap-2" aria-label="Portal">
+        <nav
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+          aria-label="Portal"
+        >
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 hover:text-slate-950"
+              aria-current={isActive(link.href) ? "page" : undefined}
+              className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                isActive(link.href)
+                  ? "border-slate-950 bg-slate-950 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950"
+              }`}
             >
               {link.label}
             </Link>

@@ -17,7 +17,7 @@ export default async function VisitsPage() {
       <div className="space-y-6">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-            Visits
+            History
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
             Visit history

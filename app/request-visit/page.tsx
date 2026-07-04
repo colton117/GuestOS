@@ -1,14 +1,25 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
 import { SmsConsentCheckbox } from "@/components/sms-consent-checkbox";
-import { getGuestVehicles, requireCurrentGuest } from "@/lib/portal";
+import {
+  getGuestVehicles,
+  getGuestVisitState,
+  requireCurrentGuest,
+} from "@/lib/portal";
 import { requestVisitAction } from "@/lib/portal-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function RequestVisitPage() {
   const guest = await requireCurrentGuest();
+  const visitState = await getGuestVisitState(guest.id);
+
+  if (visitState.kind !== "no_visit") {
+    redirect("/current-visit");
+  }
+
   const vehicles = await getGuestVehicles(guest.id);
   const defaultVehicle =
     vehicles.find((vehicle) => vehicle.isDefault) ?? vehicles[0];

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
+  getGuestPortalDestination,
+  getCurrentGuestId,
   PORTAL_GUEST_COOKIE,
   requireCurrentGuest,
 } from "@/lib/portal";
@@ -47,7 +49,8 @@ export async function selectGuestAction(formData: FormData) {
     sameSite: "lax",
   });
 
-  redirect("/dashboard");
+  const destination = await getGuestPortalDestination(guestId);
+  redirect(destination);
 }
 
 export async function clearGuestAction() {
@@ -74,7 +77,7 @@ export async function updateProfileAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard");
+  revalidatePath("/current-visit");
   revalidatePath("/profile");
   revalidatePath("/vehicles");
   revalidatePath("/visits");
@@ -225,10 +228,10 @@ export async function requestVisitAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard");
   revalidatePath("/visits");
   revalidatePath("/requests");
-  redirect("/dashboard");
+  revalidatePath("/current-visit");
+  redirect("/current-visit");
 }
 
 export async function updateVisitRequestAction(formData: FormData) {
@@ -262,6 +265,8 @@ export async function updateVisitRequestAction(formData: FormData) {
   });
 
   revalidatePath("/requests");
+  revalidatePath("/current-visit");
+  revalidatePath("/request-visit");
 }
 
 export async function approveVisitAction(formData: FormData) {
@@ -272,6 +277,10 @@ export async function approveVisitAction(formData: FormData) {
   });
 
   revalidatePath("/requests");
+  revalidatePath("/current-visit");
+  revalidatePath("/request-visit");
+  revalidatePath("/dashboard");
+  revalidatePath("/visits");
 }
 
 export async function denyVisitAction(formData: FormData) {
@@ -282,4 +291,30 @@ export async function denyVisitAction(formData: FormData) {
   });
 
   revalidatePath("/requests");
+  revalidatePath("/current-visit");
+  revalidatePath("/request-visit");
+  revalidatePath("/dashboard");
+  revalidatePath("/visits");
+}
+
+export async function cancelVisitRequestAction(formData: FormData) {
+  const visitId = String(formData.get("visitId") ?? "");
+
+  await prisma.visit.update({
+    where: { id: visitId },
+    data: { status: "DENIED" },
+  });
+
+  const guestId = await getCurrentGuestId();
+
+  revalidatePath("/current-visit");
+  revalidatePath("/request-visit");
+  revalidatePath("/visits");
+
+  if (!guestId) {
+    redirect("/request-visit");
+  }
+
+  const destination = await getGuestPortalDestination(guestId);
+  redirect(destination);
 }
