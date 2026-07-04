@@ -30,7 +30,7 @@ export default async function VisitsPage() {
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
       <div className="space-y-6 lg:space-y-8">
-        <section className="gos-card overflow-hidden">
+        <section className="gos-card overflow-hidden gos-fade-in">
           <div className="px-6 py-8 sm:px-8 sm:py-10">
             <p className="gos-badge">History</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
@@ -74,13 +74,25 @@ function Timeline({
   emptyText: string;
 }) {
   if (visits.length === 0) {
-    return <p className="text-sm text-[color:var(--gos-muted)]">{emptyText}</p>;
+    return (
+      <div className="gos-panel flex items-start gap-4 p-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
+          <Clock3 className="h-6 w-6 text-[color:var(--gos-primary)]" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-base font-semibold text-[color:var(--gos-primary)]">
+            No visits yet
+          </p>
+          <p className="text-sm leading-6 text-[color:var(--gos-muted)]">{emptyText}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
       {visits.map((visit) => (
-        <article key={visit.id} className="gos-panel p-5">
+        <article key={visit.id} className="gos-panel p-5 gos-fade-in">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -124,7 +136,7 @@ function Stat({
   value: string;
 }) {
   return (
-    <div className="rounded-[24px] bg-[rgba(31,46,39,0.04)] p-4">
+    <div className="rounded-[24px] bg-[rgba(31,46,39,0.04)] p-4 transition-transform duration-[180ms] hover:-translate-y-0.5">
       <div className="flex items-center gap-3">
         <Icon className="h-4 w-4 text-[color:var(--gos-accent)]" />
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">

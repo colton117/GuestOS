@@ -30,7 +30,7 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
       <div className="space-y-6 lg:space-y-8">
-        <section className="gos-card overflow-hidden">
+        <section className="gos-card overflow-hidden gos-fade-in">
           <div className="flex flex-col gap-6 px-6 py-8 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
               <p className="gos-badge">Vehicles</p>
@@ -51,9 +51,7 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
         <SectionCard title="Vehicle List">
           <div className="space-y-4">
             {vehicles.length === 0 ? (
-              <div className="gos-panel p-6 text-sm text-[color:var(--gos-muted)]">
-                No saved vehicles.
-              </div>
+              <EmptyVehiclesState />
             ) : (
               vehicles.map((vehicle) => (
                 <article
@@ -120,10 +118,20 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                 <input type="hidden" name="vehicleId" value={editingVehicle.id} />
               ) : null}
               <Field label="Make">
-                <input name="make" defaultValue={editingVehicle?.make ?? ""} className="gos-input" />
+                <input
+                  name="make"
+                  defaultValue={editingVehicle?.make ?? ""}
+                  autoComplete="off"
+                  className="gos-input"
+                />
               </Field>
               <Field label="Model">
-                <input name="model" defaultValue={editingVehicle?.model ?? ""} className="gos-input" />
+                <input
+                  name="model"
+                  defaultValue={editingVehicle?.model ?? ""}
+                  autoComplete="off"
+                  className="gos-input"
+                />
               </Field>
               <Field label="Year">
                 <input
@@ -134,13 +142,28 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                 />
               </Field>
               <Field label="Color">
-                <input name="color" defaultValue={editingVehicle?.color ?? ""} className="gos-input" />
+                <input
+                  name="color"
+                  defaultValue={editingVehicle?.color ?? ""}
+                  autoComplete="off"
+                  className="gos-input"
+                />
               </Field>
               <Field label="Plate">
-                <input name="plate" defaultValue={editingVehicle?.plate ?? ""} className="gos-input" />
+                <input
+                  name="plate"
+                  defaultValue={editingVehicle?.plate ?? ""}
+                  autoComplete="off"
+                  className="gos-input"
+                />
               </Field>
               <Field label="State">
-                <input name="state" defaultValue={editingVehicle?.state ?? ""} className="gos-input" />
+                <input
+                  name="state"
+                  defaultValue={editingVehicle?.state ?? ""}
+                  autoComplete="off"
+                  className="gos-input"
+                />
               </Field>
               <label className="md:col-span-2 flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4">
                 <input
@@ -176,6 +199,29 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
         </div>
       </div>
     </PortalShell>
+  );
+}
+
+function EmptyVehiclesState() {
+  return (
+    <div className="gos-panel flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
+          <CarFront className="h-6 w-6 text-[color:var(--gos-primary)]" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-base font-semibold text-[color:var(--gos-primary)]">
+            No vehicles saved yet
+          </p>
+          <p className="max-w-2xl text-sm leading-6 text-[color:var(--gos-muted)]">
+            Add your primary vehicle so future visits can be requested without extra setup.
+          </p>
+        </div>
+      </div>
+      <Link href="/request-visit" className="gos-button-primary w-full sm:w-auto">
+        Request Visit
+      </Link>
+    </div>
   );
 }
 

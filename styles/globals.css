@@ -54,6 +54,10 @@ textarea {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
@@ -66,21 +70,44 @@ textarea {
 
 input:not([type="checkbox"]):not([type="radio"]),
 select {
-  min-height: 52px;
+  min-height: 56px;
 }
 
 textarea {
-  min-height: 132px;
+  min-height: 144px;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):focus,
-select:focus,
-textarea:focus {
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  padding: 1rem 1.1rem;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(107, 114, 128, 0.72);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: none;
   border-color: rgba(31, 46, 39, 0.35);
   box-shadow:
     0 0 0 4px rgba(168, 138, 90, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: rgba(166, 70, 70, 0.42);
+  box-shadow: 0 0 0 4px rgba(166, 70, 70, 0.08);
 }
 
 .gos-shell {
@@ -153,6 +180,22 @@ textarea:focus {
   transform: translateY(-1px);
 }
 
+.gos-button-primary:focus-visible,
+.gos-button-secondary:focus-visible,
+.gos-button-ghost:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(168, 138, 90, 0.14),
+    0 14px 30px rgba(31, 46, 39, 0.16);
+}
+
+.gos-button-secondary:focus-visible,
+.gos-button-ghost:focus-visible {
+  box-shadow:
+    0 0 0 4px rgba(168, 138, 90, 0.14),
+    0 8px 28px rgba(31, 46, 39, 0.06);
+}
+
 .gos-badge {
   display: inline-flex;
   align-items: center;
@@ -169,7 +212,6 @@ textarea:focus {
 
 .gos-input {
   width: 100%;
-  padding: 0.95rem 1rem;
 }
 
 .gos-label {
@@ -185,13 +227,43 @@ textarea:focus {
 }
 
 .gos-fade-in {
-  animation: gosFadeIn 220ms ease-out both;
+  animation: gosFadeIn 180ms ease-out both;
+}
+
+.gos-scale-in {
+  animation: gosScaleIn 180ms ease-out both;
+}
+
+.gos-slide-in {
+  animation: gosSlideIn 180ms ease-out both;
 }
 
 @keyframes gosFadeIn {
   from {
     opacity: 0;
     transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gosScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gosSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;

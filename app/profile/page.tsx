@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
       <div className="space-y-6 lg:space-y-8">
-        <section className="gos-card overflow-hidden">
+        <section className="gos-card overflow-hidden gos-fade-in">
           <div className="flex flex-col gap-6 px-6 py-8 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
               <p className="gos-badge">Profile</p>
@@ -24,9 +24,9 @@ export default async function ProfilePage() {
                 Keep your guest identity current so your stay and future visits stay smooth.
               </p>
             </div>
-            <div className="flex items-center gap-4 rounded-[28px] bg-[rgba(31,46,39,0.04)] px-5 py-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-[color:var(--gos-primary)] text-white">
-                <UserRound className="h-8 w-8" />
+            <div className="flex items-center gap-4 rounded-[28px] bg-[rgba(31,46,39,0.04)] px-5 py-4 shadow-sm">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[color:var(--gos-primary)] text-white">
+                <UserRound className="h-9 w-9" />
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.18em] text-[color:var(--gos-muted)]">
@@ -43,19 +43,39 @@ export default async function ProfilePage() {
         <SectionCard title="Editable Details">
           <form action={updateProfileAction} className="grid gap-5 md:grid-cols-2">
             <Field label="First Name" icon={UserRound}>
-              <input name="firstName" defaultValue={guest.firstName} className="gos-input" />
+              <input
+                name="firstName"
+                defaultValue={guest.firstName}
+                autoComplete="given-name"
+                className="gos-input"
+              />
             </Field>
             <Field label="Last Name" icon={UserRound}>
-              <input name="lastName" defaultValue={guest.lastName} className="gos-input" />
+              <input
+                name="lastName"
+                defaultValue={guest.lastName}
+                autoComplete="family-name"
+                className="gos-input"
+              />
             </Field>
             <Field label="Email" icon={Mail}>
-              <input name="email" defaultValue={guest.email} className="gos-input" />
+              <input
+                name="email"
+                defaultValue={guest.email}
+                autoComplete="email"
+                className="gos-input"
+              />
             </Field>
             <Field label="Phone" icon={Phone}>
-              <input name="phone" defaultValue={guest.phone} className="gos-input" />
+              <input
+                name="phone"
+                defaultValue={guest.phone}
+                autoComplete="tel"
+                className="gos-input"
+              />
             </Field>
 
-            <div className="md:col-span-2 flex justify-end">
+            <div className="md:col-span-2 flex justify-end pt-2">
               <button className="gos-button-primary w-full sm:w-auto">
                 Save Profile
               </button>

@@ -26,8 +26,8 @@ export function PortalNav({ guestName }: { guestName?: string }) {
   }
 
   return (
-    <header className="border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.7)] backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.82)] backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.75)]">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="gos-section-title text-[0.72rem] font-semibold">
@@ -46,14 +46,14 @@ export function PortalNav({ guestName }: { guestName?: string }) {
             ) : null}
             <Link
               href="/login"
-              className="gos-button-ghost text-sm"
+              className="gos-button-ghost text-sm transition-transform duration-[180ms]"
             >
               Switch Guest
             </Link>
             <form action={clearGuestAction}>
               <button
                 type="submit"
-                className="gos-button-ghost text-sm"
+                className="gos-button-ghost text-sm transition-transform duration-[180ms]"
               >
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -73,7 +73,7 @@ export function PortalNav({ guestName }: { guestName?: string }) {
               aria-current={isActive(link.href) ? "page" : undefined}
               className={`gos-button-secondary shrink-0 text-sm ${
                 isActive(link.href)
-                  ? "border-[color:var(--gos-primary)] bg-[color:var(--gos-primary)] text-white shadow-md"
+                  ? "border-[color:var(--gos-primary)] bg-[color:var(--gos-primary)] text-white shadow-md ring-1 ring-[rgba(31,46,39,0.1)]"
                   : ""
               }`}
             >

@@ -29,7 +29,7 @@ export default async function RequestVisitPage() {
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
       <div className="space-y-6 lg:space-y-8">
-        <section className="gos-card overflow-hidden">
+        <section className="gos-card overflow-hidden gos-fade-in">
           <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="px-6 py-8 sm:px-8 sm:py-10">
               <div className="space-y-4">
@@ -66,24 +66,22 @@ export default async function RequestVisitPage() {
 
         <SectionCard title="Visit Request">
           {vehicles.length === 0 ? (
-            <div className="space-y-4">
-              <div className="gos-panel p-6">
-                <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
-                  Add a vehicle before requesting a visit.
-                </p>
-              </div>
-              <Link href="/vehicles" className="gos-button-primary">
-                <DoorOpen className="h-4 w-4" />
-                Add Vehicle
-              </Link>
-            </div>
+            <EmptyVehiclePrompt />
           ) : (
             <form action={requestVisitAction} className="grid gap-5 md:grid-cols-2">
               <Field label="Arrival Date & Time">
-                <input name="arrivalDateTime" type="datetime-local" className="gos-input" />
+                <input
+                  name="arrivalDateTime"
+                  type="datetime-local"
+                  className="gos-input"
+                />
               </Field>
               <Field label="Departure Date & Time">
-                <input name="departureDateTime" type="datetime-local" className="gos-input" />
+                <input
+                  name="departureDateTime"
+                  type="datetime-local"
+                  className="gos-input"
+                />
               </Field>
 
               <label className="space-y-2 md:col-span-2">
@@ -114,11 +112,7 @@ export default async function RequestVisitPage() {
                 <span className="text-sm font-medium text-[color:var(--gos-primary)]">
                   Request Notes
                 </span>
-                <textarea
-                  name="requestNotes"
-                  rows={5}
-                  className="gos-input"
-                />
+                <textarea name="requestNotes" rows={5} className="gos-input" />
               </label>
 
               <div className="md:col-span-2">
@@ -166,7 +160,7 @@ function ToggleCard({
   label: string;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4">
+    <label className="flex items-center gap-3 rounded-[24px] bg-[rgba(31,46,39,0.04)] px-4 py-4 transition-transform duration-[180ms] hover:-translate-y-0.5">
       <input
         type="checkbox"
         name={name}
@@ -175,6 +169,30 @@ function ToggleCard({
       />
       <span className="text-sm text-[color:var(--gos-text)]">{label}</span>
     </label>
+  );
+}
+
+function EmptyVehiclePrompt() {
+  return (
+    <div className="gos-panel flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-[rgba(31,46,39,0.06)]">
+          <DoorOpen className="h-6 w-6 text-[color:var(--gos-primary)]" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-base font-semibold text-[color:var(--gos-primary)]">
+            Add a vehicle first
+          </p>
+          <p className="max-w-2xl text-sm leading-6 text-[color:var(--gos-muted)]">
+            A vehicle keeps the request workflow calm and complete. Add one, then come back to finish booking.
+          </p>
+        </div>
+      </div>
+      <Link href="/vehicles" className="gos-button-primary w-full sm:w-auto">
+        <DoorOpen className="h-4 w-4" />
+        Add Vehicle
+      </Link>
+    </div>
   );
 }
 
