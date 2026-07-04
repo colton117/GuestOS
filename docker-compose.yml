@@ -1,12 +1,26 @@
 services:
+  migrate:
+    build:
+      context: .
+      target: builder
+    user: "1001:1001"
+    env_file: .env
+    volumes:
+      - guestos-data:/app/prisma
+    working_dir: /app
+    command: npx prisma migrate deploy
+
   guestos:
     build: .
     ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: "file:./dev.db"
+      - "127.0.0.1:3001:3000"
+    env_file: .env
     volumes:
       - guestos-data:/app/prisma
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 volumes:
   guestos-data:
