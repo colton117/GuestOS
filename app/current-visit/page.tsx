@@ -1,6 +1,8 @@
+import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
+  ArrowRight,
   CarFront,
   Home,
   MapPinned,
@@ -214,6 +216,16 @@ export default async function CurrentVisitPage() {
                         : "All guest services are ready for your stay."}
                   </p>
                 </div>
+
+                {state.kind !== "pending_visit_request" ? (
+                  <Link
+                    href="/current-visit/guide-me"
+                    className="gos-button-primary w-full"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    Guide Me
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
