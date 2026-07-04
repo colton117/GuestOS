@@ -218,13 +218,22 @@ export default async function CurrentVisitPage() {
                 </div>
 
                 {state.kind !== "pending_visit_request" ? (
-                  <Link
-                    href="/current-visit/guide-me"
-                    className="gos-button-primary w-full"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    Guide Me
-                  </Link>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Link
+                      href="/current-visit/guide-me"
+                      className="gos-button-primary w-full"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Guide Me
+                    </Link>
+                    <Link
+                      href="/current-visit/property-map"
+                      className="gos-button-secondary w-full"
+                    >
+                      <MapPinned className="h-4 w-4" />
+                      Property Map
+                    </Link>
+                  </div>
                 ) : null}
               </div>
             </div>

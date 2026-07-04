@@ -1,0 +1,84 @@
+export default function Loading() {
+  return (
+    <div className="gos-shell">
+      <div className="sticky top-0 z-50 border-b border-[rgba(31,46,39,0.08)] bg-[rgba(255,255,255,0.82)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="h-3 w-20 rounded-full bg-[rgba(31,46,39,0.08)]" />
+              <div className="h-6 w-32 rounded-full bg-[rgba(31,46,39,0.08)]" />
+            </div>
+            <div className="h-10 w-28 rounded-full bg-[rgba(31,46,39,0.08)]" />
+          </div>
+          <div className="flex gap-2 overflow-hidden">
+            <div className="h-11 w-28 rounded-full bg-[rgba(31,46,39,0.08)]" />
+            <div className="h-11 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+            <div className="h-11 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        <div className="space-y-6 lg:space-y-8">
+          <section className="gos-card p-6 sm:p-8">
+            <div className="h-6 w-28 rounded-full bg-[rgba(31,46,39,0.08)]" />
+            <div className="mt-4 space-y-3">
+              <div className="h-10 w-56 rounded-full bg-[rgba(31,46,39,0.08)]" />
+              <div className="h-4 w-full max-w-3xl rounded-full bg-[rgba(31,46,39,0.08)]" />
+              <div className="h-4 w-4/5 rounded-full bg-[rgba(31,46,39,0.08)]" />
+            </div>
+          </section>
+
+          <section className="gos-card overflow-hidden">
+            <div className="border-b border-[rgba(31,46,39,0.08)] px-5 py-4 sm:px-6 sm:py-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="h-10 w-56 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                <div className="flex gap-2">
+                  <div className="h-10 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  <div className="h-10 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  <div className="h-10 w-28 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2 overflow-x-auto">
+                <div className="h-9 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                <div className="h-9 w-28 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                <div className="h-9 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                <div className="h-9 w-24 rounded-full bg-[rgba(31,46,39,0.08)]" />
+              </div>
+            </div>
+
+            <div className="grid gap-0 xl:grid-cols-[1.3fr_0.7fr]">
+              <div className="border-b border-[rgba(31,46,39,0.08)] bg-[rgba(250,248,245,0.72)] xl:border-b-0 xl:border-r">
+                <div className="aspect-[4/3] bg-[rgba(31,46,39,0.05)]" />
+              </div>
+
+              <div className="space-y-4 p-5 sm:p-6">
+                <div className="gos-panel p-5">
+                  <div className="h-5 w-40 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  <div className="mt-4 space-y-3">
+                    <div className="h-4 w-full rounded-full bg-[rgba(31,46,39,0.08)]" />
+                    <div className="h-4 w-4/5 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  </div>
+                </div>
+                <div className="gos-panel p-5">
+                  <div className="h-5 w-40 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="h-20 rounded-[24px] bg-[rgba(31,46,39,0.08)]" />
+                    <div className="h-20 rounded-[24px] bg-[rgba(31,46,39,0.08)]" />
+                    <div className="h-20 rounded-[24px] bg-[rgba(31,46,39,0.08)]" />
+                    <div className="h-20 rounded-[24px] bg-[rgba(31,46,39,0.08)]" />
+                  </div>
+                </div>
+                <div className="gos-panel p-5">
+                  <div className="h-5 w-40 rounded-full bg-[rgba(31,46,39,0.08)]" />
+                  <div className="mt-4 h-48 rounded-[28px] bg-[rgba(31,46,39,0.08)]" />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+}
+
