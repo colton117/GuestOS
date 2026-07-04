@@ -163,11 +163,35 @@ export async function requireCurrentGuest() {
   return guest;
 }
 
-export async function getLoginGuests() {
-  return prisma.guest.findMany({
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    include: {
-      vehicles: true,
+export function normalizeGuestEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function normalizeGuestPhone(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+/**
+ * Looks up a guest by email or phone. Accepts either format in a single
+ * field: values containing "@" are matched against email, everything else
+ * is matched against phone (digits-only, so formatting like dashes or
+ * parentheses doesn't matter).
+ */
+export async function findGuestByIdentifier(identifier: string) {
+  const trimmed = identifier.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalizedPhone = normalizeGuestPhone(trimmed);
+
+  return prisma.guest.findFirst({
+    where: {
+      OR: [
+        { email: normalizeGuestEmail(trimmed) },
+        ...(normalizedPhone.length >= 7 ? [{ phone: normalizedPhone }] : []),
+      ],
     },
   });
 }
