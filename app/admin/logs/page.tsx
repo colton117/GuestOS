@@ -1,13 +1,13 @@
-import { AdminShell } from "@/components/admin-shell";
+import { SuperadminShell } from "@/components/superadmin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SystemLogList, type SystemLogEntryView } from "@/components/system-log-list";
 import { getRecentSystemLogs } from "@/lib/system-log";
-import { requireAdminSession } from "@/lib/admin-auth";
+import { requireSuperadminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function LogsPage() {
-  await requireAdminSession("/logs");
+export default async function AdminLogsPage() {
+  await requireSuperadminSession("/admin/logs");
 
   const logs = await getRecentSystemLogs(150);
   const logViews: SystemLogEntryView[] = logs.map((log) => ({
@@ -21,11 +21,11 @@ export default async function LogsPage() {
   }));
 
   return (
-    <AdminShell>
+    <SuperadminShell>
       <div className="space-y-6">
         <div>
           <p className="gos-section-title text-[0.72rem] font-semibold">
-            Logs
+            Admin
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--gos-primary)]">
             Activity &amp; system log
@@ -40,6 +40,6 @@ export default async function LogsPage() {
           <SystemLogList logs={logViews} />
         </SectionCard>
       </div>
-    </AdminShell>
+    </SuperadminShell>
   );
 }

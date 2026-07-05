@@ -287,3 +287,20 @@ export function getNextGuideStep(
 
   return flow.steps[completedStepIds.length] ?? null;
 }
+
+/** Every step across every flow, for admin UIs that manage per-step data (e.g. reference photos) independent of any one guest's session. */
+export function getAllGuideSteps(): Array<{
+  stepId: string;
+  title: string;
+  mode: ArrivalMode;
+  flowTitle: string;
+}> {
+  return (Object.values(guideFlows) as GuideFlowDefinition[]).flatMap((flow) =>
+    flow.steps.map((step) => ({
+      stepId: step.id,
+      title: step.title,
+      mode: flow.mode,
+      flowTitle: flow.title,
+    })),
+  );
+}

@@ -128,6 +128,12 @@ export async function adminUpdateVehicleAction(formData: FormData) {
     redirect("/guests");
   }
 
+  // Callers outside the guest detail page (e.g. the quick-register edit
+  // modal) need to land back where they started — defaults to the guest
+  // detail page's own behavior when omitted, so that page needs no changes.
+  const successRedirect =
+    String(formData.get("successRedirect") ?? "") || `/guests/${guestId}`;
+
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, guestId },
   });
@@ -161,5 +167,6 @@ export async function adminUpdateVehicleAction(formData: FormData) {
   });
 
   revalidatePath(`/guests/${guestId}`);
-  redirect(`/guests/${guestId}`);
+  revalidatePath("/quick-register");
+  redirect(successRedirect);
 }

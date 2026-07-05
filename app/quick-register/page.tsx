@@ -4,8 +4,9 @@ import { findQuickRegisterMatch } from "@/lib/admin-data";
 import { SectionCard } from "@/components/section-card";
 import { AutoSearchInput } from "@/components/auto-search-input";
 import { Modal } from "@/components/ui/modal";
+import { VehicleFormFields } from "@/components/vehicle-form-fields";
 import { requireAdminSession } from "@/lib/admin-auth";
-import { adminUpdateGuestAction } from "@/lib/admin-guest-actions";
+import { adminUpdateGuestAction, adminUpdateVehicleAction } from "@/lib/admin-guest-actions";
 import {
   adminCreateGuestAction,
   adminCreateVisitAction,
@@ -19,6 +20,7 @@ type QuickRegisterPageProps = {
     q?: string;
     error?: string;
     editGuest?: string;
+    editVehicle?: string;
   }>;
 };
 
@@ -27,7 +29,7 @@ export default async function QuickRegisterPage({
 }: QuickRegisterPageProps) {
   await requireAdminSession("/quick-register");
 
-  const { q: query = "", error, editGuest } = (await searchParams) ?? {};
+  const { q: query = "", error, editGuest, editVehicle } = (await searchParams) ?? {};
   const guest = await findQuickRegisterMatch(query);
   const defaultVehicle =
     guest?.vehicles.find((vehicle) => vehicle.isDefault) ?? guest?.vehicles[0];
@@ -104,12 +106,22 @@ export default async function QuickRegisterPage({
                       : "No vehicle on file"}
                   </p>
                 </div>
-                <Link
-                  href={`/quick-register?q=${encodeURIComponent(query)}&editGuest=1`}
-                  className="gos-button-secondary text-xs"
-                >
-                  Edit Guest Details
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/quick-register?q=${encodeURIComponent(query)}&editGuest=1`}
+                    className="gos-button-secondary text-xs"
+                  >
+                    Edit Guest Details
+                  </Link>
+                  {defaultVehicle ? (
+                    <Link
+                      href={`/quick-register?q=${encodeURIComponent(query)}&editVehicle=1`}
+                      className="gos-button-secondary text-xs"
+                    >
+                      Edit Vehicle
+                    </Link>
+                  ) : null}
+                </div>
               </div>
             </SectionCard>
 
@@ -319,6 +331,26 @@ export default async function QuickRegisterPage({
             <div className="sm:col-span-2 flex justify-end">
               <button type="submit" className="gos-button-primary text-sm">
                 Save Changes
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+
+      {guest && defaultVehicle ? (
+        <Modal
+          open={Boolean(editVehicle)}
+          closeHref={closeHref}
+          title="Edit Vehicle"
+        >
+          <form action={adminUpdateVehicleAction} className="grid gap-4 sm:grid-cols-2">
+            <input type="hidden" name="guestId" value={guest.id} />
+            <input type="hidden" name="vehicleId" value={defaultVehicle.id} />
+            <input type="hidden" name="successRedirect" value={closeHref} />
+            <VehicleFormFields defaultValues={defaultVehicle} />
+            <div className="sm:col-span-2 flex justify-end">
+              <button type="submit" className="gos-button-primary text-sm">
+                Save Vehicle
               </button>
             </div>
           </form>

@@ -57,7 +57,7 @@ function statusLabel(status: AccessCardStatus) {
     case "failed":
       return "Failed";
     default:
-      return "Idle";
+      return "Unlock";
   }
 }
 

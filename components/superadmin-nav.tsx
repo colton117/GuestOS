@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, Users } from "lucide-react";
+import { Building2, LayoutDashboard, ScrollText, Users } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/hosts", label: "Hosts", icon: Users },
   { href: "/admin/property", label: "Property", icon: Building2 },
+  { href: "/admin/logs", label: "Logs", icon: ScrollText },
 ];
 
 export function SuperadminNav() {

@@ -1,17 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
+import { PlusCircle } from "lucide-react";
 import { SuperadminShell } from "@/components/superadmin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
 import {
   deleteDoorAction,
+  deleteGuidePointPhotoAction,
   saveBrandingAction,
   saveDoorAction,
+  saveGuidePointPhotoAction,
   saveHomeAssistantAction,
   saveMaxParkingDurationAction,
+  testDoorAction,
   testHomeAssistantAction,
 } from "@/lib/settings-actions";
 import { getSettingsData } from "@/lib/settings-data";
+import { getGuidePointsForAdmin } from "@/lib/guide-points";
 import { requireSuperadminSession } from "@/lib/admin-auth";
 import { Modal } from "@/components/ui/modal";
 import { HexColorField } from "@/components/hex-color-field";
@@ -22,8 +27,13 @@ export const dynamic = "force-dynamic";
 type AdminPropertyPageProps = {
   searchParams?: Promise<{
     doorEdit?: string;
+    addDoor?: string;
     haTest?: string;
     haTestMessage?: string;
+    doorTest?: string;
+    doorTestMessage?: string;
+    doorTestDoor?: string;
+    guidePointEdit?: string;
   }>;
 };
 
@@ -49,6 +59,12 @@ export default async function AdminPropertyPage({
     ? data.doors.find((door) => door.id === params.doorEdit)
     : null;
   const logoSrc = getLogoSrc(data.branding?.logoData, data.branding?.logoMimeType);
+  const guidePoints = await getGuidePointsForAdmin();
+  const editingGuidePoint = params.guidePointEdit
+    ? guidePoints.find((point) => point.stepId === params.guidePointEdit)
+    : null;
+  const drivingGuidePoints = guidePoints.filter((point) => point.mode === "driving");
+  const walkingGuidePoints = guidePoints.filter((point) => point.mode === "walking");
 
   return (
     <SuperadminShell>
@@ -72,6 +88,16 @@ export default async function AdminPropertyPage({
             Connection failed: {params.haTestMessage ?? "Unknown error."}
           </div>
         ) : null}
+        {params.doorTest === "success" ? (
+          <div className="rounded-lg border border-[rgba(62,107,78,0.3)] bg-[rgba(62,107,78,0.12)] px-4 py-3 text-sm text-[color:var(--gos-success)]">
+            {params.doorTestDoor ?? "Door"} responded successfully.
+          </div>
+        ) : null}
+        {params.doorTest === "failed" ? (
+          <div className="rounded-lg border border-[rgba(166,70,70,0.3)] bg-[rgba(166,70,70,0.12)] px-4 py-3 text-sm text-[color:var(--gos-error)]">
+            {params.doorTestDoor ?? "Door"} test failed: {params.doorTestMessage ?? "Unknown error."}
+          </div>
+        ) : null}
 
         <SectionCard title="Home Assistant">
           <div className="space-y-4">
@@ -85,6 +111,11 @@ export default async function AdminPropertyPage({
                   defaultValue={data.homeAssistant?.haUrl ?? ""}
                   className="gos-input text-sm"
                 />
+                <p className="text-xs text-[color:var(--gos-muted)]">
+                  The address your GuestOS server can reach Home Assistant at
+                  (e.g. its Tailscale address) — not the Home Assistant Cloud
+                  (nabu.casa) URL.
+                </p>
               </label>
               <label className="gos-label space-y-2">
                 <span className="text-sm font-medium text-[color:var(--gos-primary)]">
@@ -150,22 +181,14 @@ export default async function AdminPropertyPage({
           </form>
         </SectionCard>
 
-        <SectionCard title="Add Door">
-          <form action={saveDoorAction} className="grid gap-4 md:grid-cols-4">
-            <DoorFormFields />
-            <div className="md:col-span-4">
-              <SubmitButton
-                pendingLabel="Saving…"
-                className="gos-button-primary w-full text-sm sm:w-auto"
-              >
-                Add Door
-              </SubmitButton>
-            </div>
-          </form>
-        </SectionCard>
-
         <SectionCard title="Doors">
           <div className="space-y-6">
+            <div className="flex justify-end">
+              <Link href="/admin/property?addDoor=1" className="gos-button-secondary text-sm">
+                <PlusCircle className="h-4 w-4" />
+                Add Door
+              </Link>
+            </div>
             <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] divide-y divide-[rgba(31,46,39,0.08)] sm:min-w-full">
                 <thead>
@@ -206,6 +229,15 @@ export default async function AdminPropertyPage({
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-wrap gap-2">
+                            <form action={testDoorAction}>
+                              <input type="hidden" name="doorId" value={door.id} />
+                              <SubmitButton
+                                pendingLabel="Testing…"
+                                className="gos-button-secondary min-h-[44px] px-3 py-2 text-xs"
+                              >
+                                Test
+                              </SubmitButton>
+                            </form>
                             <Link
                               href={`/admin/property?doorEdit=${door.id}`}
                               className="gos-button-secondary flex min-h-[44px] items-center justify-center px-3 py-2 text-xs"
@@ -229,6 +261,18 @@ export default async function AdminPropertyPage({
                 </tbody>
               </table>
             </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Guide Reference Photos">
+          <div className="space-y-6">
+            <p className="text-sm leading-6 text-[color:var(--gos-muted)]">
+              Add a reference photo for any Guide Me step — a door, a
+              waypoint, whatever helps a guest recognize where they are.
+              Guests see a &quot;View Photo&quot; button on steps that have one.
+            </p>
+            <GuidePointGroup title="Driving" points={drivingGuidePoints} />
+            <GuidePointGroup title="Walking / Uber" points={walkingGuidePoints} />
           </div>
         </SectionCard>
 
@@ -288,6 +332,20 @@ export default async function AdminPropertyPage({
         </SectionCard>
       </div>
 
+      <Modal open={Boolean(params.addDoor)} closeHref="/admin/property" title="Add Door">
+        <form action={saveDoorAction} className="grid gap-4 md:grid-cols-2">
+          <DoorFormFields />
+          <div className="md:col-span-2">
+            <SubmitButton
+              pendingLabel="Saving…"
+              className="gos-button-primary w-full text-sm sm:w-auto"
+            >
+              Add Door
+            </SubmitButton>
+          </div>
+        </form>
+      </Modal>
+
       <Modal open={Boolean(editingDoor)} closeHref="/admin/property" title="Edit Door">
         {editingDoor ? (
           <form action={saveDoorAction} className="grid gap-4 md:grid-cols-2">
@@ -304,7 +362,100 @@ export default async function AdminPropertyPage({
           </form>
         ) : null}
       </Modal>
+
+      <Modal
+        open={Boolean(editingGuidePoint)}
+        closeHref="/admin/property"
+        title={editingGuidePoint ? `Photo: ${editingGuidePoint.title}` : "Photo"}
+      >
+        {editingGuidePoint ? (
+          <div className="space-y-4">
+            {editingGuidePoint.photoSrc ? (
+              <Image
+                src={editingGuidePoint.photoSrc}
+                alt={editingGuidePoint.title}
+                width={480}
+                height={320}
+                unoptimized
+                className="w-full rounded-lg border border-[rgba(31,46,39,0.08)] object-cover"
+              />
+            ) : null}
+            <form action={saveGuidePointPhotoAction} className="space-y-4">
+              <input type="hidden" name="stepId" value={editingGuidePoint.stepId} />
+              <label className="gos-label space-y-2">
+                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                  {editingGuidePoint.photoSrc ? "Replace Photo" : "Upload Photo"}
+                </span>
+                <input
+                  type="file"
+                  name="photoUpload"
+                  accept="image/*"
+                  className="gos-input text-sm"
+                />
+              </label>
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Save Photo
+              </SubmitButton>
+            </form>
+            {editingGuidePoint.photoSrc ? (
+              <form action={deleteGuidePointPhotoAction}>
+                <input type="hidden" name="stepId" value={editingGuidePoint.stepId} />
+                <SubmitButton
+                  pendingLabel="Removing…"
+                  className="gos-button-secondary w-full text-sm sm:w-auto"
+                >
+                  Remove Photo
+                </SubmitButton>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
+      </Modal>
     </SuperadminShell>
+  );
+}
+
+function GuidePointGroup({
+  title,
+  points,
+}: {
+  title: string;
+  points: Array<{ stepId: string; title: string; photoSrc: string | null }>;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="gos-section-title text-[0.72rem] font-semibold">{title}</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {points.map((point) => (
+          <Link
+            key={point.stepId}
+            href={`/admin/property?guidePointEdit=${point.stepId}`}
+            className="gos-panel flex items-center gap-3 p-3 transition-transform duration-[180ms] hover:-translate-y-0.5"
+          >
+            {point.photoSrc ? (
+              <Image
+                src={point.photoSrc}
+                alt={point.title}
+                width={56}
+                height={56}
+                unoptimized
+                className="h-14 w-14 shrink-0 rounded-lg object-cover"
+              />
+            ) : (
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[rgba(31,46,39,0.06)] text-xs text-[color:var(--gos-muted)]">
+                No photo
+              </span>
+            )}
+            <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+              {point.title}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -57,6 +57,18 @@ enum LogLevel {
   ERROR
 }
 
+// A reference photo for one guide-me step (lib/guide-me.ts), whether that
+// step opens a Door or is a plain waypoint (park, walk to lobby, etc.) — the
+// stepId is the stable hardcoded id from GuideStepDefinition, not a foreign
+// key, since not every step corresponds to a Door row.
+model GuidePoint {
+  id            String   @id @default(cuid())
+  stepId        String   @unique
+  photoData     Bytes?
+  photoMimeType String?
+  updatedAt     DateTime @updatedAt
+}
+
 model GuestLoginCode {
   id         String    @id @default(cuid())
   guestId    String

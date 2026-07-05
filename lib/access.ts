@@ -55,7 +55,7 @@ function isVisitAllowedForAccessPoint(
   return accessPoint.requiredVisitFlags.every((flag) => visit[flag]);
 }
 
-function toScriptEntityId(homeAssistantAction: string): string {
+export function toScriptEntityId(homeAssistantAction: string): string {
   const normalized = homeAssistantAction.trim();
 
   if (!normalized) {

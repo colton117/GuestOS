@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession, requireSuperadminSession } from "@/lib/admin-auth";
-import { pingHomeAssistant } from "@/lib/homeassistant/client";
+import { createHomeAssistantClientFromSettings, pingHomeAssistant } from "@/lib/homeassistant/client";
+import { createHomeAssistantServiceLayer } from "@/lib/homeassistant/services";
+import type { HomeAssistantData } from "@/lib/homeassistant/types";
+import { toScriptEntityId } from "@/lib/access";
 import { logSystemEvent } from "@/lib/system-log";
 
 function parseBoolean(value: FormDataEntryValue | null) {
@@ -213,6 +216,107 @@ export async function testHomeAssistantAction() {
   }
 
   redirect("/admin/property?haTest=success");
+}
+
+export async function testDoorAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
+  const doorId = String(formData.get("doorId") ?? "");
+  const door = await prisma.door.findUnique({ where: { id: doorId } });
+
+  if (!door) {
+    redirect("/admin/property");
+  }
+
+  let failureMessage: string | null = null;
+
+  try {
+    const client = await createHomeAssistantClientFromSettings();
+    const homeAssistant = createHomeAssistantServiceLayer(client);
+    await homeAssistant.runScript({
+      entity_id: toScriptEntityId(door.homeAssistantAction),
+      access_point: "admin-test",
+      guest_id: "operator",
+      visit_id: "admin-test",
+      home_assistant_action: door.homeAssistantAction,
+    } as HomeAssistantData);
+  } catch (error) {
+    failureMessage = error instanceof Error ? error.message : "Unknown error.";
+  }
+
+  await logSystemEvent({
+    level: failureMessage ? "ERROR" : "INFO",
+    category: "home_assistant",
+    message: failureMessage
+      ? `Operator test of door "${door.friendlyName}" failed: ${failureMessage}`
+      : `Operator tested door "${door.friendlyName}" successfully`,
+    actor: "operator",
+    metadata: { doorId },
+  });
+
+  if (failureMessage) {
+    redirect(
+      `/admin/property?doorTest=failed&doorTestMessage=${encodeURIComponent(failureMessage)}&doorTestDoor=${encodeURIComponent(door.friendlyName)}`,
+    );
+  }
+
+  redirect(
+    `/admin/property?doorTest=success&doorTestDoor=${encodeURIComponent(door.friendlyName)}`,
+  );
+}
+
+export async function saveGuidePointPhotoAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
+  const stepId = String(formData.get("stepId") ?? "").trim();
+
+  if (!stepId) {
+    redirect("/admin/property");
+  }
+
+  const photoFile = parseFileData(formData.get("photoUpload"));
+
+  if (photoFile) {
+    const photoData = Buffer.from(await photoFile.arrayBuffer());
+    const photoMimeType = photoFile.type;
+
+    await prisma.guidePoint.upsert({
+      where: { stepId },
+      create: { stepId, photoData, photoMimeType },
+      update: { photoData, photoMimeType },
+    });
+
+    await logSystemEvent({
+      category: "admin_action",
+      message: `Operator set a reference photo for guide step "${stepId}"`,
+      actor: "operator",
+      metadata: { stepId },
+    });
+  }
+
+  revalidatePath("/admin/property");
+  redirect("/admin/property?guidePointsTab=1");
+}
+
+export async function deleteGuidePointPhotoAction(formData: FormData) {
+  await requireSuperadminSession("/admin/property");
+
+  const stepId = String(formData.get("stepId") ?? "").trim();
+
+  if (!stepId) {
+    return;
+  }
+
+  await prisma.guidePoint.deleteMany({ where: { stepId } });
+
+  await logSystemEvent({
+    category: "admin_action",
+    message: `Operator removed the reference photo for guide step "${stepId}"`,
+    actor: "operator",
+    metadata: { stepId },
+  });
+
+  revalidatePath("/admin/property");
 }
 
 export async function saveNotificationAction(formData: FormData) {
