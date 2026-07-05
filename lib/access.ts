@@ -9,6 +9,7 @@ import {
 } from "@/lib/access-definitions";
 import { getGuestVisitState, type GuestVisitStateVisit } from "@/lib/portal";
 import { getSettingsData } from "@/lib/settings-data";
+import { logSystemEvent } from "@/lib/system-log";
 
 export const ACCESS_UNAUTHORIZED_REASON =
   "This access point is not available for your visit.";
@@ -34,6 +35,7 @@ export interface AccessServiceOptions {
   getSettingsData?: typeof getSettingsData;
   now?: () => Date;
   logger?: Pick<Console, "error" | "info" | "warn">;
+  logSystemEvent?: typeof logSystemEvent;
 }
 
 function isVisitAccessWindowOpen(
@@ -73,9 +75,20 @@ function toScriptEntityId(homeAssistantAction: string): string {
 
 function logAccessAttempt(
   logger: Pick<Console, "error" | "info" | "warn">,
+  persist: typeof logSystemEvent,
   record: AccessAttemptRecord,
 ) {
   logger.info("[GuestOS Access]", record);
+
+  void persist({
+    level: record.success ? "INFO" : "WARN",
+    category: "access",
+    message: `${record.door} access ${record.success ? "opened" : "denied"}: ${record.reason}`,
+    actor: record.guestId ?? "unknown",
+    metadata: { ...record },
+  }).catch(() => {
+    // Best-effort — a logging failure must never break the access attempt itself.
+  });
 }
 
 function createAttemptRecord(
@@ -108,12 +121,14 @@ export class GuestAccessService {
   private readonly getSettingsDataFn: typeof getSettingsData;
   private readonly nowFn: () => Date;
   private readonly logger: Pick<Console, "error" | "info" | "warn">;
+  private readonly logSystemEventFn: typeof logSystemEvent;
 
   constructor(options: AccessServiceOptions = {}) {
     this.homeAssistantOverride = options.homeAssistant;
     this.getSettingsDataFn = options.getSettingsData ?? getSettingsData;
     this.nowFn = options.now ?? (() => new Date());
     this.logger = options.logger ?? console;
+    this.logSystemEventFn = options.logSystemEvent ?? logSystemEvent;
   }
 
   // Built per-call (not in the constructor) since resolving the real config
@@ -144,7 +159,7 @@ export class GuestAccessService {
         now,
       );
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(403, record);
     }
 
@@ -160,7 +175,7 @@ export class GuestAccessService {
         now,
       );
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(403, record);
     }
 
@@ -176,7 +191,7 @@ export class GuestAccessService {
         now,
       );
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(403, record);
     }
 
@@ -190,7 +205,7 @@ export class GuestAccessService {
         now,
       );
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(403, record);
     }
 
@@ -212,7 +227,7 @@ export class GuestAccessService {
           now,
         );
 
-        logAccessAttempt(this.logger, record);
+        logAccessAttempt(this.logger, this.logSystemEventFn, record);
         return createAccessAttemptResult(403, record);
       }
 
@@ -239,7 +254,7 @@ export class GuestAccessService {
         now,
       );
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(200, record);
     } catch (error) {
       const isUnavailable =
@@ -262,7 +277,7 @@ export class GuestAccessService {
         this.logger.error("[GuestOS Access] Unexpected access failure.", error);
       }
 
-      logAccessAttempt(this.logger, record);
+      logAccessAttempt(this.logger, this.logSystemEventFn, record);
       return createAccessAttemptResult(503, record);
     }
   }

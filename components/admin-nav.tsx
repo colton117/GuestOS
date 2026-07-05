@@ -6,6 +6,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   PenSquare,
+  ScrollText,
   Settings2,
   Users,
 } from "lucide-react";
@@ -15,6 +16,7 @@ const links = [
   { href: "/guests", label: "Guests", icon: Users },
   { href: "/requests", label: "Requests", icon: ClipboardList },
   { href: "/quick-register", label: "Quick Register", icon: PenSquare },
+  { href: "/logs", label: "Logs", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 

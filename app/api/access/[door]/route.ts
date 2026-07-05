@@ -7,6 +7,7 @@ import {
 import { isAccessPointSlug } from "@/lib/access-definitions";
 import { getCurrentGuestId } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
+import { logSystemEvent } from "@/lib/system-log";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,16 @@ function logAccessAttempt(record: {
   reason: string;
 }) {
   console.info("[GuestOS Access]", record);
+
+  void logSystemEvent({
+    level: "WARN",
+    category: "access",
+    message: `${record.door} access denied: ${record.reason}`,
+    actor: record.guestId ?? "unknown",
+    metadata: { ...record },
+  }).catch(() => {
+    // Best-effort — a logging failure must never break the access attempt itself.
+  });
 }
 
 export async function POST(_: Request, { params }: AccessRouteParams) {

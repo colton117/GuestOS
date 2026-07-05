@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { isValidGuestEmail, isValidGuestPhone, normalizeGuestEmail, normalizeGuestPhone } from "@/lib/portal";
+import { logSystemEvent } from "@/lib/system-log";
 
 const MIN_VEHICLE_YEAR = 1900;
 
@@ -68,6 +69,13 @@ export async function adminUpdateGuestAction(formData: FormData) {
     data: { firstName, lastName, email, phone },
   });
 
+  await logSystemEvent({
+    category: "host_action",
+    message: `Host updated guest profile for ${firstName} ${lastName}`,
+    actor: "host",
+    metadata: { guestId },
+  });
+
   revalidatePath("/guests");
   revalidatePath(`/guests/${guestId}`);
   revalidatePath("/quick-register");
@@ -98,6 +106,13 @@ export async function adminAddVehicleAction(formData: FormData) {
   if (isDefault) {
     await syncVehicleDefaults(guestId, created.id);
   }
+
+  await logSystemEvent({
+    category: "host_action",
+    message: `Host added vehicle ${year} ${make} ${model} for a guest`,
+    actor: "host",
+    metadata: { guestId, vehicleId: created.id },
+  });
 
   revalidatePath(`/guests/${guestId}`);
   redirect(`/guests/${guestId}`);
@@ -137,6 +152,13 @@ export async function adminUpdateVehicleAction(formData: FormData) {
   if (isDefault) {
     await syncVehicleDefaults(guestId, vehicleId);
   }
+
+  await logSystemEvent({
+    category: "host_action",
+    message: `Host updated vehicle ${year} ${make} ${model} for a guest`,
+    actor: "host",
+    metadata: { guestId, vehicleId },
+  });
 
   revalidatePath(`/guests/${guestId}`);
   redirect(`/guests/${guestId}`);

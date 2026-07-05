@@ -33,6 +33,30 @@ model ActivityLog {
   @@index([guestId])
 }
 
+// Host/admin action audit trail + system/error events (Home Assistant,
+// access attempts). Not tied to a Guest via foreign key since system events
+// (e.g. an HA auth failure) aren't guest-scoped, and host/admin actions
+// don't have a stable actor identity yet — see project_auth_gap-style notes
+// on the single shared host password (no per-host login).
+model SystemLog {
+  id        String    @id @default(cuid())
+  level     LogLevel  @default(INFO)
+  category  String
+  message   String
+  actor     String?
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
 model GuestLoginCode {
   id         String    @id @default(cuid())
   guestId    String

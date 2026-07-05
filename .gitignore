@@ -21,6 +21,10 @@ prisma/dev.db-journal
 # not app content — never committed.
 .claude/site-comments.json
 
+# Rolling mirror of SystemLog (host/admin actions + system events) for a
+# coding agent to read directly — not app content, never committed.
+.claude/system-log.jsonl
+
 # logs
 npm-debug.log*
 yarn-debug.log*

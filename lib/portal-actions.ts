@@ -19,6 +19,7 @@ import {
 } from "@/lib/portal";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { logActivity } from "@/lib/activity-log";
+import { logSystemEvent } from "@/lib/system-log";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   createGuestLoginCode,
@@ -563,6 +564,13 @@ export async function updateVisitRequestAction(formData: FormData) {
     },
   });
 
+  await logSystemEvent({
+    category: "host_action",
+    message: "Host updated visit details",
+    actor: "host",
+    metadata: { visitId },
+  });
+
   revalidatePath("/requests");
   revalidatePath("/current-visit");
   revalidatePath("/request-visit");
@@ -586,9 +594,18 @@ export async function approveVisitAction(formData: FormData) {
   });
 
   if (result.count > 0) {
-    const visit = await prisma.visit.findUnique({ where: { id: visitId } });
+    const visit = await prisma.visit.findUnique({
+      where: { id: visitId },
+      include: { guest: true },
+    });
     if (visit) {
       await logActivity(visit.guestId, "Visit request approved");
+      await logSystemEvent({
+        category: "host_action",
+        message: `Host approved visit request for ${visit.guest.firstName} ${visit.guest.lastName}`,
+        actor: "host",
+        metadata: { visitId },
+      });
     }
   }
 
@@ -611,9 +628,19 @@ export async function denyVisitAction(formData: FormData) {
   });
 
   if (result.count > 0) {
-    const visit = await prisma.visit.findUnique({ where: { id: visitId } });
+    const visit = await prisma.visit.findUnique({
+      where: { id: visitId },
+      include: { guest: true },
+    });
     if (visit) {
       await logActivity(visit.guestId, "Visit request denied");
+      await logSystemEvent({
+        level: "WARN",
+        category: "host_action",
+        message: `Host denied visit request for ${visit.guest.firstName} ${visit.guest.lastName}`,
+        actor: "host",
+        metadata: { visitId },
+      });
     }
   }
 

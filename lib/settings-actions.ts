@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession, requireSuperadminSession } from "@/lib/admin-auth";
 import { pingHomeAssistant } from "@/lib/homeassistant/client";
+import { logSystemEvent } from "@/lib/system-log";
 
 function parseBoolean(value: FormDataEntryValue | null) {
   return value === "on" || value === "true";
@@ -53,9 +54,21 @@ export async function saveHostAction(formData: FormData) {
       where: { id: hostId },
       data: { name, email, phone },
     });
+    await logSystemEvent({
+      category: "admin_action",
+      message: `Operator updated host ${name}`,
+      actor: "operator",
+      metadata: { hostId },
+    });
   } else {
-    await prisma.host.create({
+    const created = await prisma.host.create({
       data: { name, email, phone },
+    });
+    await logSystemEvent({
+      category: "admin_action",
+      message: `Operator added host ${name}`,
+      actor: "operator",
+      metadata: { hostId: created.id },
     });
   }
 
@@ -73,8 +86,16 @@ export async function deleteHostAction(formData: FormData) {
     return;
   }
 
-  await prisma.host.delete({
+  const deleted = await prisma.host.delete({
     where: { id: hostId },
+  });
+
+  await logSystemEvent({
+    level: "WARN",
+    category: "admin_action",
+    message: `Operator deleted host ${deleted.name}`,
+    actor: "operator",
+    metadata: { hostId },
   });
 
   revalidatePath("/admin/hosts");
@@ -101,6 +122,12 @@ export async function saveParkingAction(formData: FormData) {
     },
   });
 
+  await logSystemEvent({
+    category: "host_action",
+    message: "Host updated parking settings",
+    actor: "host",
+  });
+
   revalidatePath("/settings");
 }
 
@@ -118,6 +145,12 @@ export async function saveMaxParkingDurationAction(formData: FormData) {
       maximumParkingDuration:
         parseOptionalNumber(formData.get("maximumParkingDuration")) ?? 7,
     },
+  });
+
+  await logSystemEvent({
+    category: "admin_action",
+    message: "Operator updated maximum parking duration",
+    actor: "operator",
   });
 
   revalidatePath("/admin/property");
@@ -144,6 +177,12 @@ export async function saveHomeAssistantAction(formData: FormData) {
     },
   });
 
+  await logSystemEvent({
+    category: "admin_action",
+    message: "Operator updated Home Assistant settings",
+    actor: "operator",
+  });
+
   revalidatePath("/admin/property");
 }
 
@@ -157,6 +196,15 @@ export async function testHomeAssistantAction() {
   } catch (error) {
     failureMessage = error instanceof Error ? error.message : "Unknown error.";
   }
+
+  await logSystemEvent({
+    level: failureMessage ? "ERROR" : "INFO",
+    category: "home_assistant",
+    message: failureMessage
+      ? `Home Assistant connection test failed: ${failureMessage}`
+      : "Home Assistant connection test succeeded",
+    actor: "operator",
+  });
 
   if (failureMessage) {
     redirect(
@@ -187,6 +235,12 @@ export async function saveNotificationAction(formData: FormData) {
       ),
       guestEmailEnabled: parseBoolean(formData.get("guestEmailEnabled")),
     },
+  });
+
+  await logSystemEvent({
+    category: "host_action",
+    message: "Host updated notification settings",
+    actor: "host",
   });
 
   revalidatePath("/settings");
@@ -225,6 +279,12 @@ export async function saveBrandingAction(formData: FormData) {
     },
   });
 
+  await logSystemEvent({
+    category: "admin_action",
+    message: "Operator updated branding settings",
+    actor: "operator",
+  });
+
   revalidatePath("/admin/property");
 }
 
@@ -259,14 +319,26 @@ export async function saveDoorAction(formData: FormData) {
         doorType,
       },
     });
+    await logSystemEvent({
+      category: "admin_action",
+      message: `Operator updated door ${friendlyName}`,
+      actor: "operator",
+      metadata: { doorId },
+    });
   } else {
-    await prisma.door.create({
+    const created = await prisma.door.create({
       data: {
         friendlyName,
         homeAssistantAction,
         enabled,
         doorType,
       },
+    });
+    await logSystemEvent({
+      category: "admin_action",
+      message: `Operator added door ${friendlyName}`,
+      actor: "operator",
+      metadata: { doorId: created.id },
     });
   }
 
@@ -283,8 +355,16 @@ export async function deleteDoorAction(formData: FormData) {
     return;
   }
 
-  await prisma.door.delete({
+  const deleted = await prisma.door.delete({
     where: { id: doorId },
+  });
+
+  await logSystemEvent({
+    level: "WARN",
+    category: "admin_action",
+    message: `Operator deleted door ${deleted.friendlyName}`,
+    actor: "operator",
+    metadata: { doorId },
   });
 
   revalidatePath("/admin/property");
