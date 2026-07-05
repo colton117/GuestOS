@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SuperadminShell } from "@/components/superadmin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
+import { Modal } from "@/components/ui/modal";
 import { deleteHostAction, saveHostAction } from "@/lib/settings-actions";
 import { getSettingsData } from "@/lib/settings-data";
 import { requireSuperadminSession } from "@/lib/admin-auth";
@@ -37,60 +38,39 @@ export default async function AdminHostsPage({
           </h1>
         </div>
 
-        <SectionCard title="Host">
-          <div className="space-y-6">
-            <form action={saveHostAction} className="grid gap-4 md:grid-cols-3">
-              {editingHost ? (
-                <input type="hidden" name="hostId" value={editingHost.id} />
-              ) : null}
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Host Name
-                </span>
-                <input
-                  name="name"
-                  defaultValue={editingHost?.name ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Host Email
-                </span>
-                <input
-                  name="email"
-                  defaultValue={editingHost?.email ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Host Phone
-                </span>
-                <input
-                  name="phone"
-                  defaultValue={editingHost?.phone ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <div className="flex flex-col gap-2 sm:flex-row md:col-span-3">
-                <SubmitButton
-                  pendingLabel="Saving…"
-                  className="gos-button-primary w-full text-sm sm:w-auto"
-                >
-                  {editingHost ? "Save Host" : "Add Host"}
-                </SubmitButton>
-                {editingHost ? (
-                  <Link
-                    href="/admin/hosts"
-                    className="gos-button-secondary flex min-h-[44px] w-full items-center justify-center text-sm sm:w-auto"
-                  >
-                    Cancel
-                  </Link>
-                ) : null}
-              </div>
-            </form>
+        <SectionCard title="Add Host">
+          <form action={saveHostAction} className="grid gap-4 md:grid-cols-3">
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Name
+              </span>
+              <input name="name" className="gos-input text-sm" />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Email
+              </span>
+              <input name="email" className="gos-input text-sm" />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Phone
+              </span>
+              <input name="phone" className="gos-input text-sm" />
+            </label>
+            <div className="md:col-span-3">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Add Host
+              </SubmitButton>
+            </div>
+          </form>
+        </SectionCard>
 
+        <SectionCard title="Hosts">
+          <div className="space-y-6">
             <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
               <table className="min-w-[560px] divide-y divide-[rgba(31,46,39,0.08)] sm:min-w-full">
                 <thead>
@@ -147,6 +127,52 @@ export default async function AdminHostsPage({
           </div>
         </SectionCard>
       </div>
+
+      <Modal open={Boolean(editingHost)} closeHref="/admin/hosts" title="Edit Host">
+        {editingHost ? (
+          <form action={saveHostAction} className="grid gap-4 md:grid-cols-3">
+            <input type="hidden" name="hostId" value={editingHost.id} />
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Name
+              </span>
+              <input
+                name="name"
+                defaultValue={editingHost.name}
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Email
+              </span>
+              <input
+                name="email"
+                defaultValue={editingHost.email}
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Phone
+              </span>
+              <input
+                name="phone"
+                defaultValue={editingHost.phone}
+                className="gos-input text-sm"
+              />
+            </label>
+            <div className="md:col-span-3">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Save Host
+              </SubmitButton>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </SuperadminShell>
   );
 }

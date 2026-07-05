@@ -127,7 +127,7 @@ export function CurrentVisitAccessActions() {
           <button
             key={accessPoint.slug}
             type="button"
-            className="gos-panel flex w-full items-center gap-4 p-5 text-left transition-transform duration-[180ms] hover:-translate-y-0.5 disabled:cursor-default disabled:opacity-100"
+            className="gos-panel flex w-full items-start gap-4 p-5 text-left transition-transform duration-[180ms] hover:-translate-y-0.5 disabled:cursor-default disabled:opacity-100"
             onClick={() => {
               if (!isOpening) {
                 void openAccessPoint(accessPoint.slug);
@@ -143,33 +143,33 @@ export function CurrentVisitAccessActions() {
                 <Icon className="h-6 w-6 text-[color:var(--gos-primary)]" />
               )}
             </span>
-            <span className="min-w-0 flex-1">
+            <span className="min-w-0 flex-1 space-y-1">
               <span className="flex flex-wrap items-center gap-2">
                 <span className="block text-base font-semibold text-[color:var(--gos-primary)]">
                   {accessPoint.title}
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${statusTone(cardState.status)}`}
+                  className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${statusTone(cardState.status)}`}
                   aria-live="polite"
                 >
                   {statusLabel(cardState.status)}
                 </span>
               </span>
-              <span className="mt-1 block text-sm leading-6 text-[color:var(--gos-muted)]">
+              <span className="block text-sm leading-6 text-[color:var(--gos-muted)]">
                 {accessPoint.description}
               </span>
               {cardState.status === "failed" && cardState.reason ? (
-                <span className="mt-2 block text-xs leading-5 text-[color:var(--gos-error)]">
+                <span className="block text-xs leading-5 text-[color:var(--gos-error)]">
                   {cardState.reason}
                 </span>
               ) : null}
               {cardState.status === "opened" ? (
-                <span className="mt-2 block text-xs leading-5 text-[color:var(--gos-success)]">
+                <span className="block text-xs leading-5 text-[color:var(--gos-success)]">
                   Access command sent to Home Assistant.
                 </span>
               ) : null}
             </span>
-            <ChevronRight className="ml-auto h-5 w-5 text-[color:var(--gos-muted)]" />
+            <ChevronRight className="ml-auto h-5 w-5 shrink-0 self-center text-[color:var(--gos-muted)]" />
           </button>
         );
       })}

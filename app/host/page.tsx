@@ -2,17 +2,32 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
-import { approveVisitAction, denyVisitAction } from "@/lib/portal-actions";
+import { Modal } from "@/components/ui/modal";
+import {
+  approveVisitAction,
+  denyVisitAction,
+  updateVisitRequestAction,
+} from "@/lib/portal-actions";
 import { getDashboardData } from "@/lib/admin-data";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function HostDashboardPage() {
+type HostDashboardPageProps = {
+  searchParams?: Promise<{ visitEdit?: string }>;
+};
+
+export default async function HostDashboardPage({
+  searchParams,
+}: HostDashboardPageProps) {
   await requireAdminSession("/host");
 
+  const { visitEdit } = (await searchParams) ?? {};
   const { pendingRequests, guestsOnProperty, upcomingVisits } =
     await getDashboardData();
+  const editingVisit = visitEdit
+    ? guestsOnProperty.find((visit) => visit.id === visitEdit)
+    : null;
 
   return (
     <AdminShell>
@@ -25,6 +40,57 @@ export default async function HostDashboardPage() {
             Welcome back
           </h1>
         </div>
+
+        <SectionCard title="Current Visits">
+          <div className="space-y-4">
+            {guestsOnProperty.length === 0 ? (
+              <p className="text-sm text-[color:var(--gos-muted)]">
+                No guests currently on property.
+              </p>
+            ) : (
+              guestsOnProperty.map((visit) => (
+                <div key={visit.id} className="gos-panel gos-card-inner">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Guest
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[color:var(--gos-primary)]">
+                        {visit.guest.firstName} {visit.guest.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Arrived
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
+                        {visit.arrivalDateTime.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
+                        Vehicle
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
+                        {visit.vehicle
+                          ? `${visit.vehicle.year} ${visit.vehicle.make} ${visit.vehicle.model}`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div className="flex xl:justify-end">
+                      <Link
+                        href={`/host?visitEdit=${visit.id}`}
+                        className="gos-button-secondary px-3 py-2 text-xs"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </SectionCard>
 
         <SectionCard title="Pending Requests" accent={pendingRequests.length > 0}>
           <div className="space-y-4">
@@ -130,49 +196,6 @@ export default async function HostDashboardPage() {
           </div>
         </div>
 
-        <SectionCard title="Guests On Property">
-          <div className="space-y-4">
-            {guestsOnProperty.length === 0 ? (
-              <p className="text-sm text-[color:var(--gos-muted)]">
-                No guests currently on property.
-              </p>
-            ) : (
-              guestsOnProperty.map((visit) => (
-                <div key={visit.id} className="gos-panel gos-card-inner">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Guest
-                      </p>
-                      <p className="mt-1 text-sm font-medium text-[color:var(--gos-primary)]">
-                        {visit.guest.firstName} {visit.guest.lastName}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Arrived
-                      </p>
-                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
-                        {visit.arrivalDateTime.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
-                        Vehicle
-                      </p>
-                      <p className="mt-1 text-sm text-[color:var(--gos-text)]">
-                        {visit.vehicle
-                          ? `${visit.vehicle.year} ${visit.vehicle.make} ${visit.vehicle.model}`
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </SectionCard>
-
         <SectionCard title="Upcoming Visits">
           <div className="space-y-4">
             {upcomingVisits.length === 0 ? (
@@ -196,6 +219,103 @@ export default async function HostDashboardPage() {
           </div>
         </SectionCard>
       </div>
+
+      <Modal open={Boolean(editingVisit)} closeHref="/host" title="Edit Visit">
+        {editingVisit ? (
+          <form action={updateVisitRequestAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="visitId" value={editingVisit.id} />
+            <input type="hidden" name="redirectTo" value="/host" />
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Arrival Date &amp; Time
+              </span>
+              <input
+                name="arrivalDateTime"
+                type="datetime-local"
+                defaultValue={editingVisit.arrivalDateTime.toISOString().slice(0, 16)}
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Departure Date &amp; Time
+              </span>
+              <input
+                name="departureDateTime"
+                type="datetime-local"
+                defaultValue={
+                  editingVisit.departureDateTime
+                    ? editingVisit.departureDateTime.toISOString().slice(0, 16)
+                    : ""
+                }
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="gos-label space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Vehicle
+              </span>
+              <select
+                name="vehicleId"
+                defaultValue={editingVisit.vehicleId ?? ""}
+                className="gos-input text-sm"
+              >
+                <option value="">No vehicle selected</option>
+                {editingVisit.guest.vehicles.map((vehicle) => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.plate}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-3 md:col-span-2 md:grid-cols-3">
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                <input
+                  type="checkbox"
+                  name="parkingRequired"
+                  defaultChecked={editingVisit.parkingRequired}
+                />
+                <span>Parking Required</span>
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                <input
+                  type="checkbox"
+                  name="buildingAccessRequired"
+                  defaultChecked={editingVisit.buildingAccessRequired}
+                />
+                <span>Building Access Required</span>
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-[rgba(31,46,39,0.12)] px-4 py-3">
+                <input
+                  type="checkbox"
+                  name="apartmentAccessRequired"
+                  defaultChecked={editingVisit.apartmentAccessRequired}
+                />
+                <span>Apartment Access Required</span>
+              </label>
+            </div>
+            <label className="gos-label space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Request Notes
+              </span>
+              <textarea
+                name="requestNotes"
+                rows={4}
+                defaultValue={editingVisit.requestNotes ?? ""}
+                className="gos-input text-sm"
+              />
+            </label>
+            <div className="md:col-span-2">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Save Visit
+              </SubmitButton>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </AdminShell>
   );
 }

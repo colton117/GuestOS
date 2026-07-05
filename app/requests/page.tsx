@@ -3,15 +3,31 @@ import { AdminShell } from "@/components/admin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
 import { approveVisitAction, denyVisitAction } from "@/lib/portal-actions";
-import { getPendingRequests } from "@/lib/admin-data";
+import { getPendingRequests, getRequestHistory } from "@/lib/admin-data";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
+function historyStatusTone(status: string) {
+  switch (status) {
+    case "APPROVED":
+    case "ACTIVE":
+    case "COMPLETED":
+      return "bg-[rgba(62,107,78,0.12)] text-[color:var(--gos-success)]";
+    case "DENIED":
+      return "bg-[rgba(166,70,70,0.12)] text-[color:var(--gos-error)]";
+    default:
+      return "bg-[rgba(31,46,39,0.08)] text-[color:var(--gos-primary)]";
+  }
+}
+
 export default async function RequestsPage() {
   await requireAdminSession("/requests");
 
-  const requests = await getPendingRequests();
+  const [requests, history] = await Promise.all([
+    getPendingRequests(),
+    getRequestHistory(),
+  ]);
 
   return (
     <AdminShell>
@@ -121,6 +137,38 @@ export default async function RequestsPage() {
               ))
             )}
           </div>
+        </SectionCard>
+
+        <SectionCard title="Request History">
+          {history.length === 0 ? (
+            <p className="text-sm text-[color:var(--gos-muted)]">
+              No past requests yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {history.map((visit) => (
+                <div
+                  key={visit.id}
+                  className="gos-panel flex flex-wrap items-center justify-between gap-2 p-4 text-sm"
+                >
+                  <span className="font-medium text-[color:var(--gos-primary)]">
+                    {visit.guest.firstName} {visit.guest.lastName}
+                  </span>
+                  <span className="text-[color:var(--gos-muted)]">
+                    {visit.arrivalDateTime.toLocaleString()}
+                  </span>
+                  <span className="text-[color:var(--gos-muted)]">
+                    {visit.vehicle
+                      ? `${visit.vehicle.year} ${visit.vehicle.make} ${visit.vehicle.model}`
+                      : "—"}
+                  </span>
+                  <span className={`gos-badge ${historyStatusTone(visit.status)}`}>
+                    {visit.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
       </div>
     </AdminShell>

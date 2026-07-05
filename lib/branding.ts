@@ -23,3 +23,12 @@ export async function getGuestBranding() {
     logoSrc,
   };
 }
+
+export async function getBrandColors() {
+  const settings = await getSettingsData();
+
+  return {
+    primaryColor: settings.branding?.primaryColor ?? null,
+    accentColor: settings.branding?.accentColor ?? null,
+  };
+}

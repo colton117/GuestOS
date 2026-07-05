@@ -36,10 +36,29 @@ export async function getDashboardData() {
         },
       }),
       prisma.visit.findMany({
-        where: { status: "ACTIVE" },
+        // "On property" mirrors the guest-facing active_visit definition
+        // (lib/portal.ts resolveGuestVisitState): either explicitly ACTIVE,
+        // or APPROVED with an arrival window that's already started. Without
+        // the second half, a host who approves a request whose arrival time
+        // has already passed never sees the guest listed anywhere, since
+        // nothing automatically flips status to ACTIVE at arrival time.
+        where: {
+          OR: [
+            { status: "ACTIVE" },
+            {
+              status: "APPROVED",
+              arrivalDateTime: { lte: now },
+              OR: [{ departureDateTime: null }, { departureDateTime: { gte: now } }],
+            },
+          ],
+        },
         orderBy: [{ arrivalDateTime: "asc" }],
         include: {
-          guest: true,
+          guest: {
+            include: {
+              vehicles: true,
+            },
+          },
           vehicle: true,
         },
       }),
@@ -123,6 +142,18 @@ export async function getPendingRequests() {
           vehicles: true,
         },
       },
+      vehicle: true,
+    },
+  });
+}
+
+export async function getRequestHistory() {
+  return prisma.visit.findMany({
+    where: { status: { not: "PENDING" } },
+    orderBy: [{ updatedAt: "desc" }],
+    take: 50,
+    include: {
+      guest: true,
       vehicle: true,
     },
   });

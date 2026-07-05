@@ -14,10 +14,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { CurrentVisitCountdown } from "@/components/current-visit-countdown";
-import { CurrentVisitAccessActions } from "@/components/current-visit-access-actions";
+import { CurrentVisitTabs } from "@/components/current-visit-tabs";
 import { PortalShell } from "@/components/portal-shell";
 import { SectionCard } from "@/components/section-card";
-import { PropertyMapEngine } from "@/components/property-map-engine";
 import { cancelVisitRequestAction } from "@/lib/portal-actions";
 import {
   getCurrentGuest,
@@ -25,7 +24,6 @@ import {
   getGuestVisitState,
 } from "@/lib/portal";
 import { getGuestBranding } from "@/lib/branding";
-import { propertyMapFloors } from "@/lib/property-map";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +98,7 @@ export default async function CurrentVisitPage() {
         <div className="space-y-6 lg:space-y-8">
           <section className="gos-card overflow-hidden gos-fade-in">
             <div className="px-6 py-8 sm:px-8 sm:py-10">
-              <p className="gos-badge">Dashboard</p>
+              <p className="gos-badge">Overview</p>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--gos-primary)] sm:text-5xl">
                 Welcome back, {guest.firstName}
               </h1>
@@ -127,6 +125,8 @@ export default async function CurrentVisitPage() {
   return (
     <PortalShell guestName={guestName}>
       <div className="space-y-6 lg:space-y-8">
+        {state.kind !== "pending_visit_request" ? <CurrentVisitTabs /> : null}
+
         <section className="gos-card overflow-hidden">
           <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-10">
@@ -398,41 +398,6 @@ export default async function CurrentVisitPage() {
                 </div>
               </SectionCard>
             </div>
-
-            <SectionCard title="Arrival Details">
-              <div className="grid gap-4 md:grid-cols-2">
-                <InfoTile
-                  icon={MapPinned}
-                  label="Maps & Directions"
-                  value="Directions will show up here."
-                />
-                <InfoTile
-                  icon={ShieldCheck}
-                  label="Important Information"
-                  value="Access instructions and house notes live here."
-                />
-                <InfoTile icon={Wifi} label="Wi-Fi" value="Network details are added by the host." />
-                <InfoTile
-                  icon={Sparkles}
-                  label="Available Amenities"
-                  value="Amenities will show up here."
-                />
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Property Map">
-              <PropertyMapEngine
-                floors={propertyMapFloors}
-                initialFloorId="garage-level-1"
-                guestName={guestName}
-                propertyName={propertyName}
-                variant="embedded"
-              />
-            </SectionCard>
-
-            <SectionCard title="Access">
-              <CurrentVisitAccessActions />
-            </SectionCard>
           </div>
         ) : null}
       </div>

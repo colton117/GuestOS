@@ -9,11 +9,13 @@ import {
   saveDoorAction,
   saveHomeAssistantAction,
   saveMaxParkingDurationAction,
-  saveNotificationAction,
   testHomeAssistantAction,
 } from "@/lib/settings-actions";
 import { getSettingsData } from "@/lib/settings-data";
 import { requireSuperadminSession } from "@/lib/admin-auth";
+import { Modal } from "@/components/ui/modal";
+import { HexColorField } from "@/components/hex-color-field";
+import type { DoorType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -148,72 +150,22 @@ export default async function AdminPropertyPage({
           </form>
         </SectionCard>
 
+        <SectionCard title="Add Door">
+          <form action={saveDoorAction} className="grid gap-4 md:grid-cols-4">
+            <DoorFormFields />
+            <div className="md:col-span-4">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Add Door
+              </SubmitButton>
+            </div>
+          </form>
+        </SectionCard>
+
         <SectionCard title="Doors">
           <div className="space-y-6">
-            <form action={saveDoorAction} className="grid gap-4 md:grid-cols-4">
-              {editingDoor ? (
-                <input type="hidden" name="doorId" value={editingDoor.id} />
-              ) : null}
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Friendly Name
-                </span>
-                <input
-                  name="friendlyName"
-                  defaultValue={editingDoor?.friendlyName ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Home Assistant Action
-                </span>
-                <input
-                  name="homeAssistantAction"
-                  defaultValue={editingDoor?.homeAssistantAction ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Door Type
-                </span>
-                <select
-                  name="doorType"
-                  defaultValue={editingDoor?.doorType ?? "MANUAL_CODE"}
-                  className="gos-input text-sm"
-                >
-                  <option value="BUTTERFLY">Butterfly</option>
-                  <option value="SMARTRENT">SmartRent</option>
-                  <option value="MANUAL_CODE">Manual Code</option>
-                </select>
-              </label>
-              <label className="flex items-center gap-3 self-end pb-3">
-                <input
-                  type="checkbox"
-                  name="enabled"
-                  defaultChecked={editingDoor?.enabled ?? true}
-                />
-                <span className="text-sm text-[color:var(--gos-text)]">Enabled</span>
-              </label>
-              <div className="flex flex-col gap-2 sm:flex-row md:col-span-4">
-                <SubmitButton
-                  pendingLabel="Saving…"
-                  className="gos-button-primary w-full text-sm sm:w-auto"
-                >
-                  {editingDoor ? "Save Door" : "Add Door"}
-                </SubmitButton>
-                {editingDoor ? (
-                  <Link
-                    href="/admin/property"
-                    className="gos-button-secondary flex min-h-[44px] w-full items-center justify-center text-sm sm:w-auto"
-                  >
-                    Cancel
-                  </Link>
-                ) : null}
-              </div>
-            </form>
-
             <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] divide-y divide-[rgba(31,46,39,0.08)] sm:min-w-full">
                 <thead>
@@ -280,92 +232,136 @@ export default async function AdminPropertyPage({
           </div>
         </SectionCard>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <SectionCard title="Notifications">
-            <form action={saveNotificationAction} className="space-y-4">
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Host Email
-                </span>
-                <input
-                  name="hostEmail"
-                  defaultValue={data.notifications?.hostEmail ?? ""}
-                  className="gos-input text-sm"
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  name="appleNotificationEnabled"
-                  defaultChecked={data.notifications?.appleNotificationEnabled ?? false}
-                />
-                <span className="text-sm text-[color:var(--gos-text)]">
-                  Apple Notification Enabled
-                </span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  name="guestEmailEnabled"
-                  defaultChecked={data.notifications?.guestEmailEnabled ?? false}
-                />
-                <span className="text-sm text-[color:var(--gos-text)]">
-                  Guest Email Enabled
-                </span>
-              </label>
-              <SubmitButton
-                pendingLabel="Saving…"
-                className="gos-button-primary w-full text-sm sm:w-auto"
-              >
-                Save Notification Settings
-              </SubmitButton>
-            </form>
-          </SectionCard>
-
-          <SectionCard title="Branding">
-            <form action={saveBrandingAction} className="space-y-4">
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Logo Upload
-                </span>
-                <input
-                  type="file"
-                  name="logoUpload"
-                  accept="image/*"
-                  className="gos-input text-sm"
-                />
-              </label>
-              {logoSrc ? (
-                <Image
-                  src={logoSrc}
-                  alt="Current logo"
-                  width={160}
-                  height={64}
-                  unoptimized
-                  className="h-16 w-auto rounded border border-[rgba(31,46,39,0.08)] bg-white object-contain p-2"
-                />
-              ) : null}
-              <label className="gos-label space-y-2">
-                <span className="text-sm font-medium text-[color:var(--gos-primary)]">
-                  Welcome Message
-                </span>
-                <textarea
-                  name="welcomeMessage"
-                  defaultValue={data.branding?.welcomeMessage ?? ""}
-                  rows={4}
-                  className="gos-input text-sm"
-                />
-              </label>
+        <SectionCard title="Branding">
+          <form action={saveBrandingAction} className="grid gap-4 md:grid-cols-2">
+            <label className="gos-label space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Logo Upload
+              </span>
+              <input
+                type="file"
+                name="logoUpload"
+                accept="image/*"
+                className="gos-input text-sm"
+              />
+            </label>
+            {logoSrc ? (
+              <Image
+                src={logoSrc}
+                alt="Current logo"
+                width={160}
+                height={64}
+                unoptimized
+                className="h-16 w-auto rounded border border-[rgba(31,46,39,0.08)] bg-white object-contain p-2 md:col-span-2"
+              />
+            ) : null}
+            <label className="gos-label space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Welcome Message
+              </span>
+              <textarea
+                name="welcomeMessage"
+                defaultValue={data.branding?.welcomeMessage ?? ""}
+                rows={4}
+                className="gos-input text-sm"
+              />
+            </label>
+            <HexColorField
+              name="primaryColor"
+              label="Primary Color"
+              defaultValue={data.branding?.primaryColor ?? "#1F2E27"}
+            />
+            <HexColorField
+              name="accentColor"
+              label="Accent Color"
+              defaultValue={data.branding?.accentColor ?? "#A88A5A"}
+            />
+            <div className="md:col-span-2">
               <SubmitButton
                 pendingLabel="Saving…"
                 className="gos-button-primary w-full text-sm sm:w-auto"
               >
                 Save Branding
               </SubmitButton>
-            </form>
-          </SectionCard>
-        </div>
+            </div>
+          </form>
+        </SectionCard>
       </div>
+
+      <Modal open={Boolean(editingDoor)} closeHref="/admin/property" title="Edit Door">
+        {editingDoor ? (
+          <form action={saveDoorAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="doorId" value={editingDoor.id} />
+            <DoorFormFields defaultValues={editingDoor} />
+            <div className="md:col-span-2">
+              <SubmitButton
+                pendingLabel="Saving…"
+                className="gos-button-primary w-full text-sm sm:w-auto"
+              >
+                Save Door
+              </SubmitButton>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </SuperadminShell>
+  );
+}
+
+function DoorFormFields({
+  defaultValues,
+}: {
+  defaultValues?: {
+    friendlyName: string;
+    homeAssistantAction: string;
+    doorType: DoorType;
+    enabled: boolean;
+  };
+}) {
+  return (
+    <>
+      <label className="gos-label space-y-2">
+        <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+          Friendly Name
+        </span>
+        <input
+          name="friendlyName"
+          defaultValue={defaultValues?.friendlyName ?? ""}
+          className="gos-input text-sm"
+        />
+      </label>
+      <label className="gos-label space-y-2">
+        <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+          Home Assistant Action
+        </span>
+        <input
+          name="homeAssistantAction"
+          defaultValue={defaultValues?.homeAssistantAction ?? ""}
+          className="gos-input text-sm"
+        />
+      </label>
+      <label className="gos-label space-y-2">
+        <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+          Door Type
+        </span>
+        <select
+          name="doorType"
+          defaultValue={defaultValues?.doorType ?? "MANUAL_CODE"}
+          className="gos-input text-sm"
+        >
+          <option value="BUTTERFLY">Butterfly</option>
+          <option value="SMARTRENT">SmartRent</option>
+          <option value="MANUAL_CODE">Manual Code</option>
+        </select>
+      </label>
+      <label className="flex items-center gap-3 self-end pb-3">
+        <input
+          type="checkbox"
+          name="enabled"
+          defaultChecked={defaultValues?.enabled ?? true}
+        />
+        <span className="text-sm text-[color:var(--gos-text)]">Enabled</span>
+      </label>
+    </>
   );
 }

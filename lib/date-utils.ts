@@ -12,6 +12,13 @@ export function roundDownToNearestHalfHour(date: Date): Date {
   return rounded;
 }
 
+const HOURS_24_MS = 24 * 60 * 60 * 1000;
+
+/** Adds 24 hours to a date — used to default a departure time relative to arrival. */
+export function addOneDay(date: Date): Date {
+  return new Date(date.getTime() + HOURS_24_MS);
+}
+
 /** Formats a Date as the value a `datetime-local` input expects (YYYY-MM-DDTHH:mm), in local time. */
 export function toDateTimeLocalValue(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");

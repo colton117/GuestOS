@@ -43,7 +43,7 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
                 Mark your main vehicle so it&apos;s ready to go when you request a visit.
               </p>
             </div>
-            <Link href="/request-visit" className="gos-button-primary">
+            <Link href="/request-visit?new=1" className="gos-button-primary">
               <PlusCircle className="h-4 w-4" />
               Request Visit
             </Link>

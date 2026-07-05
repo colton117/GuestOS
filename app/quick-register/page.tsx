@@ -10,7 +10,7 @@ import {
   adminCreateGuestAction,
   adminCreateVisitAction,
 } from "@/lib/admin-visit-actions";
-import { roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
+import { addOneDay, roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,9 @@ export default async function QuickRegisterPage({
   const guest = await findQuickRegisterMatch(query);
   const defaultVehicle =
     guest?.vehicles.find((vehicle) => vehicle.isDefault) ?? guest?.vehicles[0];
-  const defaultArrival = toDateTimeLocalValue(roundDownToNearestHalfHour(new Date()));
+  const roundedArrival = roundDownToNearestHalfHour(new Date());
+  const defaultArrival = toDateTimeLocalValue(roundedArrival);
+  const defaultDeparture = toDateTimeLocalValue(addOneDay(roundedArrival));
   const closeHref = `/quick-register?q=${encodeURIComponent(query)}`;
 
   return (
@@ -137,6 +139,7 @@ export default async function QuickRegisterPage({
                     <input
                       name="departureDateTime"
                       type="datetime-local"
+                      defaultValue={defaultDeparture}
                       className="gos-input text-sm"
                     />
                   </label>

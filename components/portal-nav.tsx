@@ -12,7 +12,7 @@ import {
 import { clearGuestAction } from "@/lib/portal-actions";
 
 const links = [
-  { href: "/current-visit", label: "Dashboard", icon: Building2 },
+  { href: "/current-visit", label: "Overview", icon: Building2 },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },
   { href: "/profile", label: "Profile", icon: UserRound },
   { href: "/visits", label: "Activity", icon: Clock3 },

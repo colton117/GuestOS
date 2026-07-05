@@ -10,7 +10,7 @@ import {
   requireCurrentGuest,
 } from "@/lib/portal";
 import { requestVisitAction } from "@/lib/portal-actions";
-import { roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
+import { addOneDay, roundDownToNearestHalfHour, toDateTimeLocalValue } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,9 @@ export default async function RequestVisitPage({
   const vehicles = await getGuestVehicles(guest.id);
   const defaultVehicle =
     vehicles.find((vehicle) => vehicle.isDefault) ?? vehicles[0];
-  const defaultArrival = toDateTimeLocalValue(roundDownToNearestHalfHour(new Date()));
+  const roundedArrival = roundDownToNearestHalfHour(new Date());
+  const defaultArrival = toDateTimeLocalValue(roundedArrival);
+  const defaultDeparture = toDateTimeLocalValue(addOneDay(roundedArrival));
 
   return (
     <PortalShell guestName={`${guest.firstName} ${guest.lastName}`}>
@@ -93,6 +95,7 @@ export default async function RequestVisitPage({
             vehicles={vehicles}
             defaultVehicleId={defaultVehicle?.id ?? ""}
             defaultArrival={defaultArrival}
+            defaultDeparture={defaultDeparture}
           />
         </Modal>
       ) : null}

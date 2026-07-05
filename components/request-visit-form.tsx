@@ -18,11 +18,13 @@ export function RequestVisitForm({
   vehicles,
   defaultVehicleId,
   defaultArrival,
+  defaultDeparture,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   vehicles: VehicleOption[];
   defaultVehicleId: string;
   defaultArrival: string;
+  defaultDeparture: string;
 }) {
   const [parkingRequired, setParkingRequired] = useState(true);
   const [vehicleId, setVehicleId] = useState(defaultVehicleId);
@@ -38,7 +40,12 @@ export function RequestVisitForm({
         />
       </Field>
       <Field label="Departure Date & Time">
-        <input name="departureDateTime" type="datetime-local" className="gos-input" />
+        <input
+          name="departureDateTime"
+          type="datetime-local"
+          defaultValue={defaultDeparture}
+          className="gos-input"
+        />
       </Field>
 
       <div className="grid gap-3 md:col-span-2 md:grid-cols-3">

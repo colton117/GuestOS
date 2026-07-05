@@ -534,6 +534,7 @@ export async function updateVisitRequestAction(formData: FormData) {
   await requireAdminSession("/requests");
 
   const visitId = String(formData.get("visitId") ?? "");
+  const redirectTo = String(formData.get("redirectTo") ?? "");
   const vehicleId = String(formData.get("vehicleId") ?? "") || null;
   const arrivalDateTime = new Date(String(formData.get("arrivalDateTime") ?? ""));
   const departureDateTimeRaw = String(formData.get("departureDateTime") ?? "");
@@ -565,6 +566,11 @@ export async function updateVisitRequestAction(formData: FormData) {
   revalidatePath("/requests");
   revalidatePath("/current-visit");
   revalidatePath("/request-visit");
+  revalidatePath("/host");
+
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
 }
 
 export async function approveVisitAction(formData: FormData) {

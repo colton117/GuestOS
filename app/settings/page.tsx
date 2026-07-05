@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { SectionCard } from "@/components/section-card";
 import { SubmitButton } from "@/components/submit-button";
-import { saveParkingAction } from "@/lib/settings-actions";
+import { saveNotificationAction, saveParkingAction } from "@/lib/settings-actions";
 import { getSettingsData } from "@/lib/settings-data";
 import { requireAdminSession } from "@/lib/admin-auth";
 
@@ -122,9 +122,49 @@ export default async function SettingsPage() {
           </form>
         </SectionCard>
 
+        <SectionCard title="Notifications">
+          <form action={saveNotificationAction} className="space-y-4">
+            <label className="gos-label space-y-2">
+              <span className="text-sm font-medium text-[color:var(--gos-primary)]">
+                Host Email
+              </span>
+              <input
+                name="hostEmail"
+                defaultValue={data.notifications?.hostEmail ?? ""}
+                className="gos-input text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                name="appleNotificationEnabled"
+                defaultChecked={data.notifications?.appleNotificationEnabled ?? false}
+              />
+              <span className="text-sm text-[color:var(--gos-text)]">
+                Apple Notification Enabled
+              </span>
+            </label>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                name="guestEmailEnabled"
+                defaultChecked={data.notifications?.guestEmailEnabled ?? false}
+              />
+              <span className="text-sm text-[color:var(--gos-text)]">
+                Guest Email Enabled
+              </span>
+            </label>
+            <SubmitButton
+              pendingLabel="Saving…"
+              className="gos-button-primary w-full text-sm sm:w-auto"
+            >
+              Save Notification Settings
+            </SubmitButton>
+          </form>
+        </SectionCard>
+
         <p className="text-sm text-[color:var(--gos-muted)]">
-          Looking for hosts, doors, Home Assistant, notifications, or
-          branding?{" "}
+          Looking for hosts, doors, Home Assistant, or branding?{" "}
           <Link
             href="/admin"
             className="underline underline-offset-4 text-[color:var(--gos-primary)]"

@@ -30,22 +30,22 @@ export default async function AdminOverviewPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="gos-panel gos-card-inner">
+          <Link href="/admin/hosts" className="gos-panel gos-card-inner transition-transform duration-[180ms] hover:-translate-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
               Hosts
             </p>
             <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
               {data.hosts.length}
             </p>
-          </div>
-          <div className="gos-panel gos-card-inner">
+          </Link>
+          <Link href="/admin/property" className="gos-panel gos-card-inner transition-transform duration-[180ms] hover:-translate-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
               Doors (Enabled)
             </p>
             <p className="mt-2 text-3xl font-semibold text-[color:var(--gos-primary)]">
               {enabledDoors} / {data.doors.length}
             </p>
-          </div>
+          </Link>
           <div className="gos-panel gos-card-inner">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--gos-muted)]">
               Guests On File

@@ -33,6 +33,13 @@ function parseFileData(value: FormDataEntryValue | null) {
   return value;
 }
 
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+function parseHexColor(value: FormDataEntryValue | null) {
+  const text = String(value ?? "").trim();
+  return HEX_COLOR_PATTERN.test(text) ? text.toUpperCase() : null;
+}
+
 export async function saveHostAction(formData: FormData) {
   await requireSuperadminSession("/admin/hosts");
 
@@ -54,6 +61,7 @@ export async function saveHostAction(formData: FormData) {
 
   revalidatePath("/admin/hosts");
   revalidatePath("/settings");
+  redirect("/admin/hosts");
 }
 
 export async function deleteHostAction(formData: FormData) {
@@ -160,7 +168,7 @@ export async function testHomeAssistantAction() {
 }
 
 export async function saveNotificationAction(formData: FormData) {
-  await requireSuperadminSession("/admin/property");
+  await requireAdminSession("/settings");
 
   await prisma.notificationSettings.upsert({
     where: { id: 1 },
@@ -181,7 +189,7 @@ export async function saveNotificationAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/admin/property");
+  revalidatePath("/settings");
 }
 
 export async function saveBrandingAction(formData: FormData) {
@@ -191,6 +199,8 @@ export async function saveBrandingAction(formData: FormData) {
   const logoData = logoFile ? Buffer.from(await logoFile.arrayBuffer()) : null;
   const logoMimeType = logoFile?.type || null;
   const welcomeMessage = parseOptionalString(formData.get("welcomeMessage"));
+  const primaryColor = parseHexColor(formData.get("primaryColor"));
+  const accentColor = parseHexColor(formData.get("accentColor"));
 
   await prisma.brandingSettings.upsert({
     where: { id: 1 },
@@ -199,6 +209,8 @@ export async function saveBrandingAction(formData: FormData) {
       logoData,
       logoMimeType,
       welcomeMessage,
+      primaryColor,
+      accentColor,
     },
     update: {
       ...(logoFile
@@ -208,6 +220,8 @@ export async function saveBrandingAction(formData: FormData) {
           }
         : {}),
       welcomeMessage,
+      primaryColor,
+      accentColor,
     },
   });
 
@@ -257,6 +271,7 @@ export async function saveDoorAction(formData: FormData) {
   }
 
   revalidatePath("/admin/property");
+  redirect("/admin/property");
 }
 
 export async function deleteDoorAction(formData: FormData) {
